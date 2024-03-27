@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import InvoiceTable from './InvoiceTable';
-import WalletConection from './WalletConection';
+import InvoiceTable from '../components/InvoiceTable';
+import WalletConection from '../components/WalletConection';
 
 const Dashboard = () => {
   //FIXME - Logica del user si esta loggeado o no

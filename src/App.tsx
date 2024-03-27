@@ -1,8 +1,10 @@
 import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Login from './components/Login';
-import ProfileEditInfo from './components/ProfileEditInfo';
-import Dashboard from './components/Dashboard';
+import Login from './pages/Login';
+import ProfileEditInfo from './pages/ProfileEditInfo';
+import Dashboard from './pages/Dashboard';
+import CreateInvoice from './pages/CreateInvoice';
+import ViewInvoice from './pages/ViewInvoice';
 
 function App() {
   return (
@@ -11,6 +13,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           {/* <Route path="/login" element={<Login />} /> */}
+          <Route path="/new-invoice" element={<CreateInvoice />} />
+          <Route path="/view-invoice" element={<ViewInvoice />} />
           <Route path="/edit-profile" element={<ProfileEditInfo />} />
           <Route path="/dashboard" element={<Dashboard />} />
 

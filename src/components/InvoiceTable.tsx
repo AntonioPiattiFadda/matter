@@ -52,7 +52,7 @@ const InvoiceTable = ({ allConnected, setAllConnected }) => {
 
   if (!allConnected) {
     return (
-      <div className="grid place-content-center w-screen h-screen  bg-slate-50">
+      <div className="hidden  sm:grid place-content-center w-screen h-screen  bg-slate-50 ">
         <Card className="w-[500px] rounded-2xl">
           <CardHeader>
             <CardTitle>
@@ -83,7 +83,7 @@ const InvoiceTable = ({ allConnected, setAllConnected }) => {
 
   if (invoiceEmpty) {
     return (
-      <div className="grid place-content-center w-screen h-screen  bg-slate-50">
+      <div className="hidden  sm:grid place-content-center w-screen h-screen  bg-slate-50">
         <Card className="w-[500px] rounded-2xl">
           <CardHeader>
             <CardTitle>
@@ -121,7 +121,7 @@ const InvoiceTable = ({ allConnected, setAllConnected }) => {
 
   return (
     <div
-      className="flex flex-col w-full p-4 bg-white rounded-lg shadow-md
+      className="hidden  sm:flex flex-col w-full p-4 bg-white rounded-lg shadow-md
  "
     >
       <div className="flex flex-row justify-between w-full h-16">

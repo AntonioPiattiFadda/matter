@@ -17,7 +17,7 @@ const UserInfo = () => {
         California 94301{' '}
       </CardDescription>
       <CardDescription className="text-xs font-medium">
-        Tax ID: 12345
+        Tax IcD: 12345
       </CardDescription>
       <Button
         className="flex font-normal text-sm p-0 text-sky-500"

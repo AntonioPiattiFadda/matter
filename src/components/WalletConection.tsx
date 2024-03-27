@@ -50,7 +50,7 @@ const WalletConection = ({ allConnected, setAllConnected }) => {
   return (
     <div>
       <Card
-        className="w-[400px] h-screen rounded-none border  "
+        className="w-[400px] sm-w-screen h-screen rounded-none"
         style={{
           borderTop: 'none',
           borderLeft: 'none',

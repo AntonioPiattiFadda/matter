@@ -25,13 +25,12 @@ const Login = () => {
     //NOTE -  - Logica de validacion del codigo
     // alert('Code validated');
     setCodeError(false);
-
   };
 
   if (sendedCode) {
     return (
-      <div className="grid place-content-center w-screen h-screen  bg-slate-50">
-        <Card className="w-[350px]">
+      <div className="grid place-content-center w-screen h-screen bg-slate-50">
+        <Card className="w-[300px] sm:w-[350px]">
           <CardHeader>
             <CardTitle>
               {' '}
@@ -89,7 +88,7 @@ const Login = () => {
 
   return (
     <div className="grid place-content-center w-screen h-screen  bg-slate-50">
-      <Card className="w-[350px]">
+      <Card className="w-[300px] sm:w-[350px]">
         <CardHeader>
           <CardTitle>
             <img
