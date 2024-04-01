@@ -13,8 +13,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           {/* <Route path="/login" element={<Login />} /> */}
-          <Route path="/new-invoice" element={<CreateInvoice />} />
-          <Route path="/view-invoice" element={<ViewInvoice />} />
+          <Route path="/create-invoice" element={<CreateInvoice />} />
+          <Route path="/view-invoice/:id" element={<ViewInvoice />} />
           <Route path="/edit-profile" element={<ProfileEditInfo />} />
           <Route path="/dashboard" element={<Dashboard />} />
 

@@ -12,18 +12,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from 'react-router-dom';
 
+const usuario = {
+  nombre: 'Juan',
+  email: 'antonio@gmail.com',
+};
+
 const Login = () => {
   const [sendedCode, setSendedCode] = useState(false);
   const [codeError, setCodeError] = useState(false);
 
   const handleSendCode = () => {
     //NOTE -  - Logica de envio de codigo por mail
+    //NOTE - Codificar el codigo para guardarlo en cookies pero que no se pueda leer
+    // sendEmail('antonio.piattifadda@gmail.com', '123456');
+    //NOTE Si el user no existe con ese email crearlo
     setSendedCode(true);
   };
 
   const validateCode = () => {
     //NOTE -  - Logica de validacion del codigo
-    // alert('Code validated');
+    //NOTE Vamos a guardar el local storage un email para que no se tenga que loguear siempre. Por ahora es de prueba
+    const usuarioString = JSON.stringify(usuario);
+    sessionStorage.setItem('user', usuarioString);
     setCodeError(false);
   };
 
@@ -52,6 +62,7 @@ const Login = () => {
               <Button
                 className="flex p-1 text-sky-500 font-normal text-base	"
                 variant="link"
+                onClick={handleSendCode}
               >
                 Send again
               </Button>

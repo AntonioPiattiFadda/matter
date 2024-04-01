@@ -1,9 +1,12 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription } from '@/components/ui/card';
-import { useState } from 'react';
-import UserInfo from '../components/UserInfo';
-import invoiceDetail from '@/data/mock-inovice-detail.json';
-
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -12,6 +15,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Link } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Label } from '@radix-ui/react-label';
+import { SaveNewInvoiceInfoSchema } from '@/Validator';
+import { useEffect, useState } from 'react';
+import { z, ZodError } from 'zod';
+import classNames from 'classnames';
+import { Invoice, InvoiceItem } from '@/types';
+import { createInvoice } from '@/Services';
+import CompanyInfo from '../components/CompanyInfo';
 
 const NoBorderStyle = {
   borderTop: 'none',
@@ -20,164 +33,610 @@ const NoBorderStyle = {
 };
 
 const CreateInvoice = () => {
-  const [invoice, setInvoice] = useState({} as Invoice);
+  const [invoiceInfo, setInvoiceInfo] = useState<Invoice>({
+    companyName: '',
+    date: null,
+    dueDate: null,
+    toCompanyName: '',
+    toCompanyEmail: '',
+    toCompanyAddress: '',
+    toCompanyTaxId: '',
+    subTotal: 0,
+    discount: 0,
+    tax: 0,
+    shipping: 0,
+    total: 0,
+    notes: '',
+    terms: '',
+    status: '',
+    payDate: null,
+  });
+
+  const [items, setItems] = useState<InvoiceItem[]>([
+    {
+      description: '',
+      name: '',
+      price: 0,
+      quantity: 0,
+      amount: 0,
+    },
+  ]);
+
+  const [total, setTotal] = useState<number>(0);
+  const [subTotal, setSubTotal] = useState<number>(0);
+  const [errors, setErrors] = useState<ZodError<unknown> | null>(null);
+
+  //FIXME - Estp es mock
+  const [successCreation, setSuccessCreation] = useState({
+    status: false,
+    id: '',
+    copied: false,
+  });
+
+  useEffect(() => {
+    //FIXME - Esta mal hecho el calculo me lo hizo copílot
+
+    const subTotal = items.reduce((acc, item) => {
+      return acc + item.amount;
+    }, 0);
+
+    setSubTotal(subTotal);
+
+    //NOTE - Preguntar en base a que se hacen los calculos y que es el price y el amount
+
+    const total = subTotal + invoiceInfo.shipping * invoiceInfo.tax;
+    setTotal(total);
+  }, [items, invoiceInfo.tax, invoiceInfo.shipping]);
+
+  const handleDeleteItem = (index: number) => {
+    if (items.length === 1) return;
+    setItems((prevItems) => {
+      const updatedItems = [...prevItems];
+      updatedItems.splice(index, 1);
+      return updatedItems;
+    });
+  };
+
+  const handleAddItem = () => {
+    setItems((prevItems) => {
+      return [
+        ...prevItems,
+        {
+          description: '',
+
+          price: 0,
+          quantity: 0,
+          amount: 0,
+        },
+      ];
+    });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (name === 'tax' || name === 'shipping' || name === 'total') {
+      setInvoiceInfo({
+        ...invoiceInfo,
+        [name]: parseInt(value),
+      });
+      return;
+    }
+    if (name === 'date' || name === 'dueDate') {
+      setInvoiceInfo({
+        ...invoiceInfo,
+        [name]: new Date(value),
+      });
+      return;
+    }
+
+    setInvoiceInfo({
+      ...invoiceInfo,
+      [name]: value,
+    });
+  };
+
+  const handleChangeItems = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const { name, value } = e.target;
+    //FIXME - Se deberia de validar que el valor sea un numeros
+    if (name === 'price' || name === 'quantity' || name === 'amount') {
+      const updatedItems = [...items];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        [name]: parseInt(value),
+      };
+
+      setItems(updatedItems);
+      return;
+    }
+    const updatedItems = [...items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [name]: value,
+    };
+
+    setItems(updatedItems);
+  };
+
+  const handleSaveInvoice = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    //FIXME traer la from company desde el usuario para agregarla a los invoices
+
+    const invoiceInfoToValidate = {
+      ...invoiceInfo,
+      items: items,
+      status: 'pending',
+      payDate: new Date(),
+    };
+
+    try {
+      SaveNewInvoiceInfoSchema.parse(invoiceInfoToValidate);
+      //FIXME - Ver como manejo el userId para mantener la sesion
+      createInvoice(invoiceInfoToValidate, 'KObY1Tueq9xb7n5h6ekz').then(
+        (res) => {
+          //NOTE - Se deberia de redirigir a la pagina de dashboard y frenar el loader
+          setSuccessCreation({
+            status: true,
+            id: res,
+            copied: false,
+          });
+        }
+      );
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setErrors(error);
+
+        setTimeout(() => {
+          setErrors(null);
+        }, 3000);
+      }
+    }
+  };
+
+  const handleCopy = () => {
+    //FIXME - Cambiar la URL por la de las variables de entorno
+    const url = `http://localhost:5173/view-invoice/${successCreation.id}`;
+    navigator.clipboard.writeText(url);
+    setSuccessCreation({
+      ...successCreation,
+      copied: true,
+    });
+    setTimeout(() => {
+      setSuccessCreation({
+        ...successCreation,
+        copied: false,
+      });
+    }, 3000);
+  };
+
+  if (successCreation.status) {
+    return (
+      <div className="hidden  sm:grid place-content-center w-screen h-screen  bg-slate-50">
+        <Card className="w-[500px] rounded-2xl flex flex-col items-center">
+          <CardHeader>
+            <CardTitle>
+              {' '}
+              <img
+                className="flex h-48 ml-2"
+                src="../../public/DiamondIcon.png"
+                alt="Diamond image"
+              />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="text-slate-900 font-bold text-xl">
+              {' '}
+              Your invoice is ready to share!{' '}
+            </CardDescription>
+            <CardDescription className="text-slate-500 text-base font-sm">
+              Share with your customer to get paid.{' '}
+            </CardDescription>
+          </CardContent>
+          <CardFooter className="flex gap-2">
+            <Button onClick={handleCopy}>
+              <img
+                className="h-6 mr-1"
+                src="../../public/CopyBlackIcon.png"
+                alt="add icon"
+              />
+              {successCreation.copied ? 'Link Copied!' : 'Copy Invoice Link'}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                setSuccessCreation({ status: false, id: '', copied: false })
+              }
+            >
+              <Link className="flex" to={`/dashboard`}>
+                Done
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-100 flex flex-col justify-center sm:items-center relative">
-      <nav className="bg-black text-white flex justify-center items-center h-10 text-sm w-full">
-        <span className="w-[350px] text-center">
-          This invoice has not been paid.
-        </span>
-      </nav>
+      <Card className="m-2 sm:w-[calc(100vw-24px)] sm:max-w-screen-md mt-[60px] mb-[60px]">
+        <form onSubmit={handleSaveInvoice}>
+          <CardContent
+            className="border flex justify-between items-center w-full h-full p-3"
+            style={NoBorderStyle}
+          >
+            <CardDescription className="flex items-center gap-2">
+              <Label className="text-slate-500 text-sm font-semibold">
+                Invoice
+              </Label>
+              <Input
+                disabled
+                placeholder="000001"
+                className="font-semibold text-black"
+              />
+            </CardDescription>
+            <CardDescription className="flex flex-col justify-between sm:flex-row sm:gap-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-slate-500 text-sm font-semibold">
+                  Issued
+                </Label>
+                <Input
+                  className={classNames('w-28', {
+                    'border-red-500':
+                      errors &&
+                      errors.issues.some((issue) => {
+                        return issue.path[0] === 'date';
+                      }),
+                  })}
+                  type="date"
+                  placeholder="MM/DD/YYYY"
+                  name="date"
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-slate-500 text-sm font-semibold">
+                  Due Date
+                </Label>
+                <Input
+                  className={classNames('h-9 w-28', {
+                    'border-red-500':
+                      errors &&
+                      errors.issues.some((issue) => {
+                        return issue.path[0] === 'dueDate';
+                      }),
+                  })}
+                  type="date"
+                  placeholder="MM/DD/YYYY"
+                  name="dueDate"
+                  onChange={handleChange}
+                />
+              </div>
+            </CardDescription>
+          </CardContent>
+          <div className="flex flex-col sm:flex-row h-[230px]">
+            <CardContent
+              className="border flex flex-col  w-full h-[230px] p-3"
+              style={NoBorderStyle}
+            >
+              <CardDescription className="text-slate-500 text-sm font-semibold mb-2">
+                From
+              </CardDescription>
+              <CompanyInfo editable={false} />
+            </CardContent>
+            <CardContent
+              className="border flex justify-between items-center w-full h-full p-3"
+              style={NoBorderStyle}
+            >
+              <div className="w-full">
+                <CardDescription className="text-slate-500 text-sm font-semibold mb-2">
+                  To
+                </CardDescription>
+                <Input
+                  className={classNames('h-9 mb-2', {
+                    'border-red-500':
+                      errors &&
+                      errors.issues.some((issue) => {
+                        return issue.path[0] === 'toCompanyName';
+                      }),
+                  })}
+                  placeholder="Company Name"
+                  name="toCompanyName"
+                  value={invoiceInfo.toCompanyName}
+                  onChange={handleChange}
+                />
+                <Input
+                  className={classNames('h-9 mb-2', {
+                    'border-red-500':
+                      errors &&
+                      errors.issues.some((issue) => {
+                        return issue.path[0] === 'toCompanyEmail';
+                      }),
+                  })}
+                  placeholder="Email"
+                  name="toCompanyEmail"
+                  value={invoiceInfo.toCompanyEmail}
+                  onChange={handleChange}
+                />
+                <Input
+                  className={classNames('h-9 mb-2', {
+                    'border-red-500':
+                      errors &&
+                      errors.issues.some((issue) => {
+                        return issue.path[0] === 'toCompanyAddress';
+                      }),
+                  })}
+                  placeholder="Address (Optional)"
+                  name="toCompanyAddress"
+                  value={invoiceInfo.toCompanyAddress}
+                  onChange={handleChange}
+                />
+                <Input
+                  className={classNames('h-9 mb-2', {
+                    'border-red-500':
+                      errors &&
+                      errors.issues.some((issue) => {
+                        return issue.path[0] === 'toCompanyTaxId';
+                      }),
+                  })}
+                  placeholder="Tax ID (Optional)"
+                  name="toCompanyTaxId"
+                  value={invoiceInfo.toCompanyTaxId}
+                  onChange={handleChange}
+                />
+              </div>
+            </CardContent>
+          </div>
+          <CardContent
+            className="border flex flex-col justify-between  w-full h-full p-3"
+            style={NoBorderStyle}
+          >
+            <Table className="w-full p-0">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[320px]">Description</TableHead>
+                  <TableHead>QTY</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item, index) => {
+                  return (
+                    <TableRow key={index}>
+                      <TableCell>
+                        {' '}
+                        <Input
+                          className={classNames('h-9', {
+                            'border-red-500':
+                              errors &&
+                              errors.issues.some((issue) => {
+                                return (
+                                  issue.path[2] === 'description' &&
+                                  issue.path[1] === index
+                                );
+                              }),
+                          })}
+                          placeholder="description"
+                          name={`description`}
+                          value={items[index].description}
+                          onChange={(e) => handleChangeItems(e, index)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {' '}
+                        <span className="flex flex-row items-center gap-2">
+                          $
+                          <Input
+                            className={classNames('h-9', {
+                              'border-red-500':
+                                errors &&
+                                errors.issues.some((issue) => {
+                                  return (
+                                    issue.path[2] === 'quantity' &&
+                                    issue.path[1] === index
+                                  );
+                                }),
+                            })}
+                            type="number"
+                            placeholder="qty"
+                            name={`quantity`}
+                            value={items[index].quantity}
+                            onChange={(e) => handleChangeItems(e, index)}
+                          />
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="flex flex-row items-center gap-2">
+                          $
+                          <Input
+                            className={classNames('h-9', {
+                              'border-red-500':
+                                errors &&
+                                errors.issues.some((issue) => {
+                                  return (
+                                    issue.path[2] === 'price' &&
+                                    issue.path[1] === index
+                                  );
+                                }),
+                            })}
+                            type="number"
+                            placeholder="price"
+                            name={`price`}
+                            value={items[index].price}
+                            onChange={(e) => handleChangeItems(e, index)}
+                          />{' '}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="flex flex-row items-center gap-2">
+                          $
+                          <Input
+                            className={classNames('h-9', {
+                              'border-red-500':
+                                errors &&
+                                errors.issues.some((issue) => {
+                                  return (
+                                    issue.path[2] === 'amount' &&
+                                    issue.path[1] === index
+                                  );
+                                }),
+                            })}
+                            type="number"
+                            placeholder="amount"
+                            name={`amount`}
+                            value={items[index].amount}
+                            onChange={(e) => handleChangeItems(e, index)}
+                          />{' '}
+                        </span>
+                      </TableCell>
+                      <TableCell className="p-0">
+                        <Button
+                          className="h-2 flex bg-transparent p-0 w-7"
+                          type="button"
+                          onClick={() => handleDeleteItem(index)}
+                        >
+                          <img
+                            className="w-full"
+                            src="../../public/DeleteItem.png"
+                            alt="deleteIcon"
+                          ></img>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            <div className="w-full flex justify-end">
+              <Button
+                className="text-base bg-transparent text-black hover:bg-transparent "
+                type="button"
+                onClick={handleAddItem}
+              >
+                <img
+                  className="h-8"
+                  src="../../public/AddItem.png"
+                  alt="add icon"
+                />{' '}
+                Add Line Item
+              </Button>
+            </div>
 
-      <Card className="m-2 sm:w-[calc(100vw-24px)] sm:max-w-screen-md">
-        <CardContent
-          className="border flex justify-between items-center w-full h-full p-3"
-          style={NoBorderStyle}
-        >
-          <CardDescription>
-            Inovice <span className="font-semibold text-black">00001</span>
-          </CardDescription>
-          <CardDescription className="flex flex-col justify-between sm:flex-row sm:gap-2">
-            <p>
-              Issued{' '}
-              <span className="font-semibold text-black">MM/DD/YYYY</span>
-            </p>
-            <p>
-              Due Date{' '}
-              <span className="font-semibold text-black">MM/DD/YYYY</span>
-            </p>
-          </CardDescription>
-        </CardContent>
-        <div className="flex flex-col sm:flex-row">
+            <CardDescription className="flex justify-end items-center  m-2">
+              <span>Subtotal</span>
+              <span className="text-black text-lg w-60 text-end">
+                ${subTotal}
+              </span>
+            </CardDescription>
+
+            <CardDescription className="flex justify-end items-center  m-2">
+              <span>Discount</span>
+              <span className="text-black text-xs font-semibold w-60 flex justify-end items-center gap-2">
+                $
+                <Input
+                  className="h-9 w-40"
+                  type="number"
+                  placeholder="Discount"
+                  name="discount"
+                  value={invoiceInfo.discount}
+                  onChange={handleChange}
+                />
+              </span>
+            </CardDescription>
+
+            <CardDescription className="flex justify-end items-center  m-2">
+              <span>Tax</span>
+              <span className="text-black text-xs font-semibold w-60 flex justify-end items-center gap-2">
+                %
+                <Input
+                  className="h-9 w-40"
+                  type="number"
+                  placeholder="Tax"
+                  name="tax"
+                  value={invoiceInfo.tax}
+                  onChange={handleChange}
+                />
+              </span>
+            </CardDescription>
+
+            <CardDescription className="flex justify-end items-center  m-2">
+              <span>Shipping</span>
+              <span className="text-black text-xs font-semibold w-60 flex justify-end items-center gap-2">
+                $
+                <Input
+                  className="h-9 w-40"
+                  type="number"
+                  placeholder="Shipping"
+                  name="shipping"
+                  value={invoiceInfo.shipping}
+                  onChange={handleChange}
+                />
+              </span>
+            </CardDescription>
+
+            <CardDescription className="flex justify-end items-center  m-2">
+              <span>Total</span>
+              <span className="text-black text-lg font-semibold w-60 text-end">
+                ${total}
+              </span>
+            </CardDescription>
+          </CardContent>
+
           <CardContent
-            className="border flex justify-between items-center w-full h-full p-3"
+            className="border flex flex-col justify-between  w-full h-full p-3"
             style={NoBorderStyle}
           >
-            <UserInfo />
-          </CardContent>
-          <CardContent
-            className="border flex justify-between items-center w-full h-full p-3"
-            style={NoBorderStyle}
-          >
-            <UserInfo />
-          </CardContent>
-        </div>
-        <CardContent
-          className="border flex flex-col justify-between  w-full h-full p-3"
-          style={NoBorderStyle}
-        >
-          <Table className="w-full p-0">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px]">Description</TableHead>
-                <TableHead>QTY</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invoiceDetail.map((invoice) => {
-                return (
-                  <TableRow key={invoice.name}>
-                    <TableCell>{invoice.name}</TableCell>
-                    <TableCell>{invoice.quantity}</TableCell>
-                    <TableCell>{invoice.price}</TableCell>
-                    <TableCell>{invoice.amount}</TableCell>
-                  </TableRow>
-                );
+            <Label className="text-slate-500 text-sm mb-2">Notes</Label>
+            <Input
+              className={classNames('h-9 ', {
+                'border-red-500':
+                  errors &&
+                  errors.issues.some((issue) => {
+                    return issue.path[0] === 'notes';
+                  }),
               })}
-            </TableBody>
-          </Table>
-
-          <CardDescription className="flex justify-between m-2">
-            <span>Subtotal</span>
-            <span className="text-black text-xs font-semibold">$100.00</span>
-          </CardDescription>
-
-          <CardDescription className="flex justify-between m-2">
-            <span>Discount</span>
-            <span className="text-black text-xs font-semibold">%5</span>
-          </CardDescription>
-
-          <CardDescription className="flex justify-between m-2">
-            <span>Tax</span>
-            <span className="text-black text-xs font-semibold">$10.00</span>
-          </CardDescription>
-
-          <CardDescription className="flex justify-between m-2">
-            <span>Shipping</span>
-            <span className="text-black text-xs font-semibold">$10.00</span>
-          </CardDescription>
-
-          <CardDescription className="flex justify-between m-2">
-            <span>Total</span>
-            <span className="text-black text-lg font-bold">$110.00</span>
-          </CardDescription>
-        </CardContent>
-
-        <CardContent
-          className="border flex flex-col justify-between  w-full h-full p-3"
-          style={NoBorderStyle}
-        >
-          <CardDescription className="flex flex-col justify-between ">
-            Notes
-          </CardDescription>
-          <CardDescription className="flex flex-col justify-between text-black ">
-            Lorem ipsum dolor esit amit
-          </CardDescription>
-        </CardContent>
-
-        <CardContent
-          className="border flex flex-col justify-between  w-full h-full p-3"
-          style={NoBorderStyle}
-        >
-          <CardDescription className="flex flex-col justify-between ">
-            Terms
-          </CardDescription>
-          <CardDescription className="flex flex-col justify-between text-black ">
-            Lorem ipsum dolor esit amit
-          </CardDescription>
-        </CardContent>
-
-        <div className="flex flex-col justify-center items-center sm:grid grid-cols-2">
-          <CardDescription className="text-black text-base m-5">
-            Pay with crypto or card.
-          </CardDescription>
-          <Button className="text-base m-2 w-11/12 mb-5">
-            <img
-              className="h-7 mr-2"
-              src="../../public/ETHLogo.png"
-              alt="eth icon"
+              id="code"
+              placeholder="Enter any notes."
+              name="notes"
+              value={invoiceInfo.notes}
+              onChange={handleChange}
             />
-            Pay with ETH
+          </CardContent>
+
+          <CardContent
+            className="border flex flex-col justify-between  w-full h-full p-3"
+            style={NoBorderStyle}
+          >
+            <Label className="text-slate-500 text-sm mb-2">Terms</Label>
+            <Input
+              className={classNames('h-9 ', {
+                'border-red-500':
+                  errors &&
+                  errors.issues.some((issue) => {
+                    return issue.path[0] === 'terms';
+                  }),
+              })}
+              id="code"
+              placeholder="Enter any terms."
+              name="terms"
+              value={invoiceInfo.terms}
+              onChange={handleChange}
+            />
+          </CardContent>
+
+          <Button className="text-base m-2 lg:absolute top-2 right-0">
+            Save New Invoice
           </Button>
-          <Button className="text-base m-2 w-11/12 mb-5">
-            <img
-              className="h-7 mr-2"
-              src="../../public/WalletLogo.png"
-              alt="wallet icon"
-            />
-            Pay with ETH
+          <Button className="bg-slate-200 text-black text-base m-2 lg:absolute top-2 left-0">
+            <Link to={'/dashboard'}>Cancel and Delete</Link>
           </Button>
-          <CardDescription className="flex gap-2 items-center mb-5">
-            Powered by
-            <img
-              className="h-5 translate-y-[-.05rem]"
-              src="../../public/MatterAlt.png"
-              alt="matter logo"
-            />
-          </CardDescription>
-        </div>
+        </form>
       </Card>
-      <Button className="bg-slate-200 text-black text-base m-2 lg:absolute top-10 right-0">
-        <img
-          className="h-5 mr-2"
-          src="../../public/CopyIcon.png"
-          alt="copy icon"
-        />
-        Copy Share Link{' '}
-      </Button>
     </div>
   );
 };

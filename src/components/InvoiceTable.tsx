@@ -1,11 +1,3 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,42 +7,46 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-
-import { Link } from 'react-router-dom';
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-import invoices from '@/data/mock-invoices.json';
 import { useEffect, useState } from 'react';
+import { DataTable } from './DataTable';
+import { Link } from 'react-router-dom';
+import { getUserByEmail, getUserInvoices } from '@/Services';
+import { Connections, User, UserInvoices } from '@/types';
 
-interface Invoice {
-  status: string;
-  invoiceId: string;
-  from: string;
-  to: string;
-  amount: number;
-  link: string;
-  //FIXME - Falta agregar la fecha del pago y sacar link porque no sirve aca
+interface InvoiceTableProps {
+  user: User;
+  connections: Connections;
 }
 
-const InvoiceTable = ({ allConnected, setAllConnected }) => {
-  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>(invoices);
-  const [selectedTab, setSelectedTab] = useState('all');
+const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
+  const [invoices, setInvoices] = useState<UserInvoices[]>([]);
 
-  //NOTE - Logica de filtrado de Invoices
+  useEffect(() => {
+    //FIXME Traer los invoices del user que tiene el email en user.email
 
-  const [invoiceEmpty, setInvoiceEmpty] = useState(true);
+    getUserByEmail(user.email).then((data) => {
+      if (data) {
+        //TODO - Traer el id del user
+        const userId: string = 'KObY1Tueq9xb7n5h6ekz';
+        getUserInvoices(userId).then((data) => {
+          const mappedInvoices = data.map((invoice) => {
+            return {
+              id: invoice.id,
+              status: invoice.status,
+              from: invoice.companyName,
+              to: invoice.toCompanyName,
+              amount: invoice.total,
+              payDate: invoice.dueDate,
+            };
+          });
 
-  const handleCreateNewInvoice = () => {
-    //FIXME - Logica de creacion de invoice
-    setInvoiceEmpty(false);
-  };
+          setInvoices(mappedInvoices);
+        });
+      }
+    });
+  }, [invoices, user.email]);
 
-  const handleTabChange = (value) => {
-    console.log(value);
-  };
-
-  if (!allConnected) {
+  if (!connections.userInfo || !connections.stripe || !connections.metamask) {
     return (
       <div className="hidden  sm:grid place-content-center w-screen h-screen  bg-slate-50 ">
         <Card className="w-[500px] rounded-2xl">
@@ -81,7 +77,7 @@ const InvoiceTable = ({ allConnected, setAllConnected }) => {
     );
   }
 
-  if (invoiceEmpty) {
+  if (invoices.length === 0) {
     return (
       <div className="hidden  sm:grid place-content-center w-screen h-screen  bg-slate-50">
         <Card className="w-[500px] rounded-2xl">
@@ -105,13 +101,15 @@ const InvoiceTable = ({ allConnected, setAllConnected }) => {
             </CardDescription>
           </CardContent>
           <CardFooter>
-            <Button onClick={handleCreateNewInvoice}>
-              <img
-                className="h-4 mr-1"
-                src="../../public/AddIcon.png"
-                alt="add icon"
-              />
-              Create New
+            <Button>
+              <Link className="flex" to={'/create-invoice'}>
+                <img
+                  className="h-4 mr-1"
+                  src="../../public/AddIcon.png"
+                  alt="add icon"
+                />
+                Create New
+              </Link>
             </Button>
           </CardFooter>
         </Card>
@@ -119,85 +117,124 @@ const InvoiceTable = ({ allConnected, setAllConnected }) => {
     );
   }
 
-  return (
-    <div
-      className="hidden  sm:flex flex-col w-full p-4 bg-white rounded-lg shadow-md
- "
-    >
-      <div className="flex flex-row justify-between w-full h-16">
-        <Tabs defaultValue="all">
-          <TabsList>
-            <TabsTrigger onClick={handleTabChange} value="all">
-              All invoices
-            </TabsTrigger>
-            <TabsTrigger onClick={handleTabChange} value="Paid">
-              Unpaid invoices
-            </TabsTrigger>
-            <TabsTrigger onClick={handleTabChange} value="Pending">
-              Paid invoices
-            </TabsTrigger>
-            <TabsTrigger onClick={handleTabChange} value="Past Due">
-              Past Due
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <Button>
-          <img
-            className="h-4 mr-1"
-            src="../../public/AddIcon.png"
-            alt="add icon"
-          />
-          Create New
-        </Button>
-      </div>
-      <Table className="w-full  border border-gray-300 rounded-lg">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">Status</TableHead>
-            <TableHead>Invoice #</TableHead>
-            <TableHead>From</TableHead>
-            <TableHead>To</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead className="text-right"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredInvoices.map((invoice) => {
-            let message;
-            let styles;
+  const columns = [
+    {
+      accessorKey: 'status',
+      header: () => (
+        <div className="text-base font-bold text-black">Status</div>
+      ),
+      cell: ({ row }) => {
+        let message;
+        let styles;
+        const payDateTimestamp = row.original.payDate;
+        const currentDateTimestamp = new Date()
+          .getTime()
+          .toString()
+          .substring(0, 8);
+        const currentDateTimestamp2 = parseInt(currentDateTimestamp);
 
-            switch (invoice.status) {
-              case 'Paid':
-                message = 'Paid on:';
-                styles = 'text-green-700 bg-green-100 font-medium text-base';
-                break;
-              case 'Pending':
-                message = 'Pending Payment';
-                styles = 'bg-slate-100 font-medium text-base';
-                break;
-              case 'Past Due':
-                message = 'Pas Due';
-                styles = 'text-red-500 bg-red-100 font-medium text-base';
-                break;
-              default:
-                message = 'Estado desconocido';
+        const isPastDue = payDateTimestamp.seconds < currentDateTimestamp2;
+
+        const payDate = new Date(
+          payDateTimestamp.seconds * 1000 +
+            payDateTimestamp.nanoseconds / 1000000
+        );
+        const formatDate = (date: Date) => {
+          const month = date.getMonth() + 1;
+          const day = date.getDate();
+          const year = date.getFullYear();
+          return `${month}/${day}/${year}`;
+        };
+
+        const formattedPayDateStr = formatDate(payDate);
+
+        switch (row.original.status) {
+          case 'paid':
+            message = `Paid on ${formattedPayDateStr}`;
+            styles =
+              'text-green-700 bg-green-100 font-medium text-base p-2 pl-4';
+            break;
+          case 'pending':
+            if (isPastDue) {
+              message = 'Past Due';
+              styles = 'bg-red-100 font-medium text-base p-2 pl-4 text-red-600';
+            } else {
+              message = 'Pending Payment';
+              styles = 'bg-slate-100 font-medium text-base p-2 pl-4';
             }
+            break;
 
-            return (
-              <TableRow key={invoice.invoiceId}>
-                <TableCell className={styles}>{message}</TableCell>
-                <TableCell>{invoice.invoiceId}</TableCell>
-                <TableCell>{invoice.from}</TableCell>
-                <TableCell>{invoice.to}</TableCell>
-                <TableCell className="text-right">{invoice.amount}</TableCell>
-                <TableCell className="text-right text-sky-400">
-                  <a href={invoice.link}>View</a>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+          default:
+            message = 'Estado desconocido';
+        }
+        return <div className={styles}>{message}</div>;
+      },
+    },
+    {
+      accessorKey: 'invoiceId',
+      header: () => (
+        <div className="text-base font-bold text-black">Invoice #</div>
+      ),
+      cell: ({ row }) => {
+        return (
+          <div className="font-medium text-base p-2 pl-4">
+            {row.original.id}
+          </div>
+        );
+      },
+    },
+
+    {
+      accessorKey: 'from',
+      header: () => <div className="text-base font-bold text-black">From</div>,
+      cell: ({ row }) => {
+        return (
+          <div className="font-medium text-base p-2 pl-4">
+            {row.original.from}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'to',
+      header: () => <div className="text-base font-bold text-black">To</div>,
+      cell: ({ row }) => {
+        return (
+          <div className="font-medium text-base p-2 pl-4">
+            {row.original.to}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'amount',
+      header: () => (
+        <div className="text-base font-bold text-black">Amount</div>
+      ),
+      cell: ({ row }) => {
+        return (
+          <div className="font-medium text-base p-2 pl-4">
+            ${row.original.amount}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'link',
+      header: () => <div className="text-right"></div>,
+      cell: ({ row }) => {
+        return (
+          <div className="text-right font-medium text-sky-600 p-2 pr-4 text-base">
+            <Link to={`/view-invoice/${row.original.id}`}>View</Link>
+          </div>
+        );
+      },
+    },
+  ];
+
+  return (
+    <div className="hidden  sm:flex flex-col w-full bg-white rounded-lg shadow-md">
+      <DataTable columns={columns} data={invoices} />
     </div>
   );
 };

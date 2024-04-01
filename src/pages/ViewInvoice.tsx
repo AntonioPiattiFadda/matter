@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription } from '@/components/ui/card';
 import { useState } from 'react';
-import UserInfo from '../components/UserInfo';
 import invoiceDetail from '@/data/mock-inovice-detail.json';
+import { useParams } from 'react-router-dom';
 
 import {
   Table,
@@ -12,6 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { getInvoiceById } from '@/Services';
+import CompanyInfo from '../components/CompanyInfo';
+import { Invoice } from '@/types';
 
 const NoBorderStyle = {
   borderTop: 'none',
@@ -20,13 +23,30 @@ const NoBorderStyle = {
 };
 
 const ViewInvoice = () => {
-  const [invoice, setInvoice] = useState({} as Invoice);
+  //FIXME - Traer el id del user y de la factura en los params porque el cliente que lo vea no puede loggearse
+  const { id } = useParams();
+  const userID = 'KObY1Tueq9xb7n5h6ekz';
+
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+
+  if (id) {
+    //FIXME - Traer el user ID del usuario logueado
+    getInvoiceById(userID, id).then((res) => {
+      return setInvoice((res as unknown as Invoice) || null);
+    });
+  }
+
+  if (!invoice) {
+    return <div>No hay invoice</div>;
+  }
 
   return (
     <div className="bg-slate-100 flex flex-col justify-center sm:items-center relative">
       <nav className="bg-black text-white flex justify-center items-center h-10 text-sm w-full">
         <span className="w-[350px] text-center">
-          This invoice has not been paid.
+          {invoice.status === 'paid'
+            ? `This invoice was paid on ${invoice.dueDate}`
+            : 'This invoice has not been paid.'}
         </span>
       </nav>
 
@@ -54,13 +74,13 @@ const ViewInvoice = () => {
             className="border flex justify-between items-center w-full h-full p-3"
             style={NoBorderStyle}
           >
-            <UserInfo />
+            <CompanyInfo editable={false} />
           </CardContent>
           <CardContent
             className="border flex justify-between items-center w-full h-full p-3"
             style={NoBorderStyle}
           >
-            <UserInfo />
+            <CompanyInfo editable={false} />
           </CardContent>
         </div>
         <CardContent

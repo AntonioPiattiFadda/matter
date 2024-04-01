@@ -1,7 +1,16 @@
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
 
-const UserInfo = () => {
+interface CompanyInfoProps {
+  editable: boolean;
+  // companyName: string;
+  // email: string;
+  // state: string;
+  // address: string;
+  // taxId: string;
+}
+
+const CompanyInfo = ({ editable }: CompanyInfoProps) => {
   return (
     <div>
       <CardDescription className="mb-2  text-black font-medium text-xl">
@@ -19,14 +28,16 @@ const UserInfo = () => {
       <CardDescription className="text-xs font-medium">
         Tax IcD: 12345
       </CardDescription>
-      <Button
-        className="flex font-normal text-sm p-0 text-sky-500"
-        variant="link"
-      >
-        Edit Details
-      </Button>
+      {editable && (
+        <Button
+          className="flex font-normal text-sm p-0 text-sky-500"
+          variant="link"
+        >
+          Edit Details
+        </Button>
+      )}
     </div>
   );
 };
 
-export default UserInfo;
+export default CompanyInfo;

@@ -3,7 +3,7 @@ import { CardDescription } from '@/components/ui/card';
 
 const StripeConectionInfo = () => {
   return (
-    <>
+    <div>
       <CardDescription className="mb-2 mt-2 text-black font-medium">
         Cash Payouts Sending To:
       </CardDescription>
@@ -16,7 +16,7 @@ const StripeConectionInfo = () => {
       >
         Disconnect
       </Button>
-    </>
+    </div>
   );
 };
 

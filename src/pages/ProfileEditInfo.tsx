@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,6 +18,13 @@ const ProfileEditInfo = () => {
   const handleSaveChanges = () => {
     //NOTE -  - Logica de guardado de los datos
   };
+  useEffect(() => {
+    //NOTE - Logica de carga de datos
+    setNewUserInfo({
+      name: 'Pedro Duarte',
+      email: 'asdfdfs@gmail.com',
+    });
+  }, [newUserInfo]);
 
   return (
     <div className="grid place-content-center w-screen h-screen bg-slate-50">

@@ -41,6 +41,38 @@
     "link": "https://example.com/invoice/INV-002"
   },
   {
+    "status": "Pending",
+    "invoiceId": "INV-002",
+    "from": "Company B",
+    "to": "Client Y",
+    "amount": 1500,
+    "link": "https://example.com/invoice/INV-002"
+  },
+  {
+    "status": "Past Due",
+    "invoiceId": "INV-003",
+    "from": "Company C",
+    "to": "Client Z",
+    "amount": 800,
+    "link": "https://example.com/invoice/INV-003"
+  },
+  {
+    "status": "Pending",
+    "invoiceId": "INV-002",
+    "from": "Company B",
+    "to": "Client Y",
+    "amount": 1500,
+    "link": "https://example.com/invoice/INV-002"
+  },
+  {
+    "status": "Past Due",
+    "invoiceId": "INV-003",
+    "from": "Company C",
+    "to": "Client Z",
+    "amount": 800,
+    "link": "https://example.com/invoice/INV-003"
+  },
+  {
     "status": "Paid",
     "invoiceId": "INV-003",
     "from": "Company C",
