@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const SaveCompanyInfoschema = z.object({
-  address: z.string().min(1),
+  adress: z.string().min(1),
   businessEmail: z.string().email(),
   city: z.string().min(1),
   companyName: z.string().min(1),
@@ -33,4 +33,8 @@ export const SaveNewInvoiceInfoSchema = z.object({
   total: z.number(),
   notes: z.string(),
   terms: z.string(),
+});
+
+export const loginWithEmailSchema = z.object({
+  email: z.string().email(),
 });

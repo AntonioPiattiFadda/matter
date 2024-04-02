@@ -22,8 +22,8 @@ import { SaveNewInvoiceInfoSchema } from '@/Validator';
 import { useEffect, useState } from 'react';
 import { z, ZodError } from 'zod';
 import classNames from 'classnames';
-import { Invoice, InvoiceItem } from '@/types';
-import { createInvoice } from '@/Services';
+import { Invoice, InvoiceItem, User } from '@/types';
+import { createInvoice, getUserByEmail } from '@/Services';
 import CompanyInfo from '../components/CompanyInfo';
 
 const NoBorderStyle = {
@@ -33,8 +33,41 @@ const NoBorderStyle = {
 };
 
 const CreateInvoice = () => {
-  const [invoiceInfo, setInvoiceInfo] = useState<Invoice>({
+  const [userCompanyInfo, setUserCompanyInfo] = useState({
     companyName: '',
+    businessEmail: '',
+    adress: '',
+    city: '',
+    state: '',
+    country: '',
+    zip: '',
+    taxId: '',
+  });
+  const [userId, setUserId] = useState<string>('');
+
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    //FIXME - Este user email tiene qu eestar en la sesion
+    getUserByEmail('antonio@gmail.com').then((data: User | null) => {
+      if (!data) {
+        return;
+      }
+      setUserId(data.id ?? '');
+      setUserCompanyInfo({
+        companyName: data.companyName || '',
+        businessEmail: data.businessEmail || '',
+        adress: data.adress || '',
+        city: data.city || '',
+        state: data.state || '',
+        zip: data.zip || '',
+        country: data.country || '',
+        taxId: data.taxId || '',
+      });
+    });
+  }, []);
+
+  const [invoiceInfo, setInvoiceInfo] = useState<Invoice>({
     date: null,
     dueDate: null,
     toCompanyName: '',
@@ -66,7 +99,6 @@ const CreateInvoice = () => {
   const [subTotal, setSubTotal] = useState<number>(0);
   const [errors, setErrors] = useState<ZodError<unknown> | null>(null);
 
-  //FIXME - Estp es mock
   const [successCreation, setSuccessCreation] = useState({
     status: false,
     id: '',
@@ -74,19 +106,17 @@ const CreateInvoice = () => {
   });
 
   useEffect(() => {
-    //FIXME - Esta mal hecho el calculo me lo hizo copílot
-
     const subTotal = items.reduce((acc, item) => {
-      return acc + item.amount;
+      return acc + item.amount * item.quantity;
     }, 0);
 
     setSubTotal(subTotal);
 
-    //NOTE - Preguntar en base a que se hacen los calculos y que es el price y el amount
+    const total = subTotal + invoiceInfo.shipping - invoiceInfo.discount;
+    const totalWithTax = total + total * (invoiceInfo.tax / 100);
 
-    const total = subTotal + invoiceInfo.shipping * invoiceInfo.tax;
-    setTotal(total);
-  }, [items, invoiceInfo.tax, invoiceInfo.shipping]);
+    setTotal(totalWithTax);
+  }, [items, invoiceInfo.tax, invoiceInfo.shipping, invoiceInfo.discount]);
 
   const handleDeleteItem = (index: number) => {
     if (items.length === 1) return;
@@ -114,7 +144,14 @@ const CreateInvoice = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === 'tax' || name === 'shipping' || name === 'total') {
+    if (name === 'tax' || name === 'shipping' || name === 'discount') {
+      if (!parseInt(value)) {
+        setInvoiceInfo({
+          ...invoiceInfo,
+          [name]: 0,
+        });
+        return;
+      }
       setInvoiceInfo({
         ...invoiceInfo,
         [name]: parseInt(value),
@@ -162,6 +199,7 @@ const CreateInvoice = () => {
 
   const handleSaveInvoice = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
 
     //FIXME traer la from company desde el usuario para agregarla a los invoices
 
@@ -169,7 +207,9 @@ const CreateInvoice = () => {
       ...invoiceInfo,
       items: items,
       status: 'pending',
-      payDate: new Date(),
+      payDate: null,
+      total: total,
+      subTotal: subTotal,
     };
 
     try {
@@ -177,7 +217,7 @@ const CreateInvoice = () => {
       //FIXME - Ver como manejo el userId para mantener la sesion
       createInvoice(invoiceInfoToValidate, 'KObY1Tueq9xb7n5h6ekz').then(
         (res) => {
-          //NOTE - Se deberia de redirigir a la pagina de dashboard y frenar el loader
+          setLoading(false);
           setSuccessCreation({
             status: true,
             id: res,
@@ -188,6 +228,7 @@ const CreateInvoice = () => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         setErrors(error);
+        setLoading(false);
 
         setTimeout(() => {
           setErrors(null);
@@ -197,8 +238,8 @@ const CreateInvoice = () => {
   };
 
   const handleCopy = () => {
-    //FIXME - Cambiar la URL por la de las variables de entorno
-    const url = `http://localhost:5173/view-invoice/${successCreation.id}`;
+    //TODO - Cambiar la URL por la de las variables de entorno
+    const url = `http://localhost:5173/view-invoice/${userId}/${successCreation.id}`;
     navigator.clipboard.writeText(url);
     setSuccessCreation({
       ...successCreation,
@@ -325,7 +366,7 @@ const CreateInvoice = () => {
               <CardDescription className="text-slate-500 text-sm font-semibold mb-2">
                 From
               </CardDescription>
-              <CompanyInfo editable={false} />
+              <CompanyInfo editable={false} info={userCompanyInfo} />
             </CardContent>
             <CardContent
               className="border flex justify-between items-center w-full h-full p-3"
@@ -629,10 +670,16 @@ const CreateInvoice = () => {
             />
           </CardContent>
 
-          <Button className="text-base m-2 lg:absolute top-2 right-0">
+          <Button
+            className="text-base m-2 lg:absolute top-2 right-0"
+            disabled={loading}
+          >
             Save New Invoice
           </Button>
-          <Button className="bg-slate-200 text-black text-base m-2 lg:absolute top-2 left-0">
+          <Button
+            disabled={loading}
+            className="bg-slate-200 text-black text-base m-2 lg:absolute top-2 left-0"
+          >
             <Link to={'/dashboard'}>Cancel and Delete</Link>
           </Button>
         </form>

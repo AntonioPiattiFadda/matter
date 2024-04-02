@@ -1,5 +1,5 @@
 import { db } from '@/../firebaseConfig';
-import { CreateUser, Invoice, UpdateCompanyInfo } from '@/types';
+import { CreateUser, Invoice, UpdateCompanyInfo, User } from '@/types';
 import {
   collection,
   query,
@@ -28,6 +28,27 @@ export const getUserByEmail = async (email: string) => {
   });
 
   return user;
+};
+
+export const getUserById = async (userId: string): Promise<User | null> => {
+  try {
+    const invoiceDoc = doc(db, 'users', userId);
+
+    const invoiceSnapshot = await getDoc(invoiceDoc);
+
+    if (invoiceSnapshot.exists()) {
+      return {
+        email: '',
+        id: invoiceSnapshot.id,
+        ...invoiceSnapshot.data(),
+      };
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error al obtener el usuario:', error);
+    throw error;
+  }
 };
 
 export const createUser = async (userData: CreateUser) => {
@@ -74,6 +95,7 @@ export const getUserInvoices = async (userId: string) => {
     const snapshot = await getDocs(invoiceCollectionRef);
 
     const invoices: {
+      payDate: Date | null;
       status: string;
       companyName: string;
       toCompanyName: string;
@@ -84,13 +106,14 @@ export const getUserInvoices = async (userId: string) => {
 
     snapshot.forEach((doc) => {
       return invoices.push({
-        id: doc.id,
         status: '',
         companyName: '',
         toCompanyName: '',
         dueDate: new Date(),
+        payDate: null,
         total: 0,
         ...doc.data(),
+        id: doc.id,
       });
     });
 
@@ -101,17 +124,22 @@ export const getUserInvoices = async (userId: string) => {
   }
 };
 
-export const getInvoiceById = async (userId: string, invoiceId: string) => {
+export const getInvoiceById = async (
+  userId: string,
+  invoiceId: string
+): Promise<Invoice | null> => {
   try {
     const invoiceDoc = doc(db, 'users', userId, 'invoices', invoiceId);
 
     const invoiceSnapshot = await getDoc(invoiceDoc);
 
     if (invoiceSnapshot.exists()) {
-      return {
+      const invoiceData = {
         id: invoiceSnapshot.id,
         ...invoiceSnapshot.data(),
       };
+
+      return invoiceData as Invoice;
     } else {
       return null;
     }

@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import MetamaskConectionInfo from './MetamaskConectionInfo';
+import StripeConectionInfo from './StripeConectionInfo';
+import CompanyInfo from './CompanyInfo';
+import { SaveCompanyInfoschema } from '@/Validator';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -9,14 +13,10 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
 import classNames from 'classnames';
-import { Connections, User } from '@/types';
-import MetamaskConectionInfo from './MetamaskConectionInfo';
-import StripeConectionInfo from './StripeConectionInfo';
-import { SaveCompanyInfoschema } from '@/Validator';
 import { z, ZodError } from 'zod';
-import CompanyInfo from './CompanyInfo';
+import { Connections, User } from '@/types';
+import { getUserByEmail, updateUser } from '@/Services';
 
 interface WalletConectionProps {
   setConnections: React.Dispatch<
@@ -33,12 +33,13 @@ interface WalletConectionProps {
 const WalletConection = ({
   setConnections,
   connections,
+  user,
 }: WalletConectionProps) => {
   const [showForm, setShowForm] = useState(false);
   const [companyInfo, setCompanyInfo] = useState({
     companyName: '',
     businessEmail: '',
-    address: '',
+    adress: '',
     city: '',
     state: '',
     zip: '',
@@ -46,23 +47,32 @@ const WalletConection = ({
     taxId: '',
   });
   const [errors, setErrors] = useState<ZodError<unknown> | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // useEffect(() => {
-  //   getUserByEmail(user.email).then((data) => {
-  //     if (data) {
-  //       setCompanyInfo({
-  //         companyName: data.companyName,
-  //         businessEmail: data.email,
-  //         address: data.address,
-  //         city: data.city,
-  //         state: data.state,
-  //         zip: data.zip,
-  //         country: data.country,
-  //         taxId: data.taxId,
-  //       });
-  //     }
-  //   });
-  // }, []);
+  useEffect(() => {
+    //FIXME - Este user email tiene qu eestar en la sesion
+    getUserByEmail(user.email).then((data: User | null) => {
+      if (!data) {
+        return;
+      }
+      if (data.adress && data.businessEmail && data.city && data.companyName) {
+        setConnections((prevConnections: Connections) => ({
+          ...prevConnections,
+          userInfo: true,
+        }));
+      }
+      setCompanyInfo({
+        companyName: data.companyName || '',
+        businessEmail: data.businessEmail || '',
+        adress: data.adress || '',
+        city: data.city || '',
+        state: data.state || '',
+        zip: data.zip || '',
+        country: data.country || '',
+        taxId: data.taxId || '',
+      });
+    });
+  }, [setConnections, user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -81,19 +91,25 @@ const WalletConection = ({
 
   const handleSaveCompanyInfo = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    setLoading(true);
     try {
       SaveCompanyInfoschema.parse(companyInfo);
       //NOTE - Enviar la info a la base de datos
+      const userId: string = 'KObY1Tueq9xb7n5h6ekz';
 
-      setConnections((prevConnections: Connections) => ({
-        ...prevConnections,
-        userInfo: true,
-      }));
+      updateUser(userId, companyInfo).then((data) => {
+        console.log(data);
+        setLoading(false);
+        setConnections((prevConnections: Connections) => ({
+          ...prevConnections,
+          userInfo: true,
+        }));
+        setShowForm(false);
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         setErrors(error);
-
+        setLoading(false);
         setTimeout(() => {
           setErrors(null);
         }, 3000);
@@ -145,7 +161,12 @@ const WalletConection = ({
 
         <CardContent>
           {connections.userInfo ? (
-            <CompanyInfo editable={true} />
+            <CompanyInfo
+              editable={true}
+              info={companyInfo}
+              setShowForm={setShowForm}
+              setConnections={setConnections}
+            />
           ) : (
             <>
               <CardDescription
@@ -211,13 +232,13 @@ const WalletConection = ({
                           'border-red-500':
                             errors &&
                             errors.issues.some((issue) => {
-                              return issue.path[0] === 'address';
+                              return issue.path[0] === 'adress';
                             }),
                         })}
                         id="adress"
                         placeholder="860 Forest Ave"
-                        name="address"
-                        value={companyInfo.address}
+                        name="adress"
+                        value={companyInfo.adress}
                         onChange={handleChange}
                       />
 
@@ -318,10 +339,15 @@ const WalletConection = ({
                     <Button
                       className="flex mt-2 w-[50%] bg-gray-200 text-black "
                       onClick={() => setShowForm(false)}
+                      disabled={loading}
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" className="flex mt-2 w-[50%]">
+                    <Button
+                      disabled={loading}
+                      type="submit"
+                      className="flex mt-2 w-[50%]"
+                    >
                       Save
                     </Button>
                   </div>
@@ -342,48 +368,58 @@ const WalletConection = ({
             </>
           )}
 
-          {connections.stripe ? (
-            <StripeConectionInfo />
-          ) : (
-            <>
-              <CardDescription className="text-slate-900	font-semibold text-sm mt-6">
-                Setup card payouts
-              </CardDescription>
-              <Button
-                className="flex items-center mt-3 mb-3 w-full font-normal text-sm "
-                onClick={handleStripeConnection}
-              >
-                Connect Stripe
-                <img
-                  className="h-6 translate-y-[.03rem] ml-2"
-                  src="../../public/stripeLogo.png"
-                  alt="Matter Logo"
-                />{' '}
-              </Button>
-            </>
-          )}
+          <div
+            style={
+              (connections.stripe || connections.metamask) && !showForm
+                ? { height: 'calc(100vh - 310px)' }
+                : { height: 'auto' }
+            }
+            className="flex flex-col justify-end h-screen"
+          >
+            {connections.stripe ? (
+              <StripeConectionInfo />
+            ) : (
+              <>
+                <CardDescription className="text-slate-900	font-semibold text-sm mt-6">
+                  Setup card payouts
+                </CardDescription>
+                <Button
+                  className="flex items-center mt-3 mb-3 w-full font-normal text-sm "
+                  onClick={handleStripeConnection}
+                  disabled={loading}
+                >
+                  Connect Stripe
+                  <img
+                    className="h-6 translate-y-[.03rem] ml-2"
+                    src="../../public/stripeLogo.png"
+                    alt="Matter Logo"
+                  />{' '}
+                </Button>
+              </>
+            )}
 
-          {connections.metamask ? (
-            <MetamaskConectionInfo />
-          ) : (
-            <>
-              <CardDescription className="text-slate-900	font-semibold text-sm mt-6">
-                Setup crypto payouts
-              </CardDescription>
-              <Button
-                className="flex mt-3  w-full font-normal	text-sm"
-                onClick={handleMetamaskConnection}
-              >
-                Connect Metamask Wallet{' '}
-                <img
-                  className="h-6 translate-y-[.03rem] ml-2"
-                  src="../../public/MetaMaskLogo.png"
-                  alt="Matter Logo"
-                />{' '}
-              </Button>
-            </>
-          )}
-
+            {connections.metamask ? (
+              <MetamaskConectionInfo />
+            ) : (
+              <>
+                <CardDescription className="text-slate-900	font-semibold text-sm mt-6">
+                  Setup crypto payouts
+                </CardDescription>
+                <Button
+                  className="flex mt-3  w-full font-normal	text-sm"
+                  onClick={handleMetamaskConnection}
+                  disabled={loading}
+                >
+                  Connect Metamask Wallet{' '}
+                  <img
+                    className="h-6 translate-y-[.03rem] ml-2"
+                    src="../../public/MetaMaskLogo.png"
+                    alt="Matter Logo"
+                  />{' '}
+                </Button>
+              </>
+            )}
+          </div>
           <CardDescription>
             <div className="flex w-full gap-3 mt-2">
               <Button

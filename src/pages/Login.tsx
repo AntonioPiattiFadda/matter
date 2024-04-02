@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { getUserByEmail } from '@/Services';
+import { loginWithEmailSchema } from '@/Validator';
 import {
   Card,
   CardContent,
@@ -8,31 +9,55 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from 'react-router-dom';
-
-const usuario = {
-  nombre: 'Juan',
-  email: 'antonio@gmail.com',
-};
+import classNames from 'classnames';
+import { z } from 'zod';
 
 const Login = () => {
   const [sendedCode, setSendedCode] = useState(false);
   const [codeError, setCodeError] = useState(false);
+  const [email, setEmail] = useState('');
+  const [user, setUser] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<z.ZodError | null>(null);
+
+  const handleChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
 
   const handleSendCode = () => {
-    //NOTE -  - Logica de envio de codigo por mail
-    //NOTE - Codificar el codigo para guardarlo en cookies pero que no se pueda leer
-    // sendEmail('antonio.piattifadda@gmail.com', '123456');
-    //NOTE Si el user no existe con ese email crearlo
-    setSendedCode(true);
+    setLoading(true);
+    try {
+      loginWithEmailSchema.parse({ email });
+      getUserByEmail(email).then((user) => {
+        //NOTE - Enviar el codigo por mail
+        setSendedCode(true);
+        setLoading(false);
+
+        if (!user) {
+          //FIXME - Crear el usuario y enviar el mail
+          return;
+        }
+        setUser(user);
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setErrors(error);
+        setTimeout(() => {
+          setErrors(null);
+          setLoading(false);
+        }, 3000);
+      }
+    }
   };
 
   const validateCode = () => {
     //NOTE -  - Logica de validacion del codigo
     //NOTE Vamos a guardar el local storage un email para que no se tenga que loguear siempre. Por ahora es de prueba
-    const usuarioString = JSON.stringify(usuario);
+    const usuarioString = JSON.stringify(user);
     sessionStorage.setItem('user', usuarioString);
     setCodeError(false);
   };
@@ -63,6 +88,7 @@ const Login = () => {
                 className="flex p-1 text-sky-500 font-normal text-base	"
                 variant="link"
                 onClick={handleSendCode}
+                disabled={loading}
               >
                 Send again
               </Button>
@@ -81,6 +107,7 @@ const Login = () => {
               <Button
                 className="flex mt-2 font-normal text-base"
                 onClick={validateCode}
+                disabled={loading}
               >
                 <Link to={'/dashboard'}> Submit Code</Link>
               </Button>
@@ -114,11 +141,25 @@ const Login = () => {
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" placeholder="Enter your email" />
+                <Input
+                  className={classNames('', {
+                    'border-red-500':
+                      errors &&
+                      errors.issues.some((issue) => {
+                        return issue.path[0] === 'email';
+                      }),
+                  })}
+                  id="email"
+                  name="email"
+                  placeholder="Enter your email"
+                  onChange={handleChangeEmail}
+                />
               </div>
             </div>
             <Button
+              disabled={loading}
               className="flex mt-2 text-sm font-normal"
+              type="button"
               onClick={handleSendCode}
             >
               Send Code

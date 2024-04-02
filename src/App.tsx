@@ -14,7 +14,10 @@ function App() {
           <Route path="/" element={<Login />} />
           {/* <Route path="/login" element={<Login />} /> */}
           <Route path="/create-invoice" element={<CreateInvoice />} />
-          <Route path="/view-invoice/:id" element={<ViewInvoice />} />
+          <Route
+            path="/view-invoice/:userId/:invoiceId"
+            element={<ViewInvoice />}
+          />
           <Route path="/edit-profile" element={<ProfileEditInfo />} />
           <Route path="/dashboard" element={<Dashboard />} />
 

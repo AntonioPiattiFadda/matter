@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,8 +11,10 @@ import {
 import { useEffect, useState } from 'react';
 import { DataTable } from './DataTable';
 import { Link } from 'react-router-dom';
-import { getUserByEmail, getUserInvoices } from '@/Services';
+import { getUserInvoices } from '@/Services';
 import { Connections, User, UserInvoices } from '@/types';
+import { compareDates } from '@/utils/CompareDates';
+import { formatDate } from '@/utils/FormatDate';
 
 interface InvoiceTableProps {
   user: User;
@@ -22,29 +25,123 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
   const [invoices, setInvoices] = useState<UserInvoices[]>([]);
 
   useEffect(() => {
-    //FIXME Traer los invoices del user que tiene el email en user.email
+    getUserInvoices(user.id || '').then((data) => {
+      const mappedInvoices = data.map((invoice) => {
+        return {
+          id: invoice.id,
+          status: invoice.status,
+          from: invoice.companyName,
+          to: invoice.toCompanyName,
+          amount: invoice.total,
+          dueDate: invoice.dueDate,
+          payDate: invoice.payDate,
+        };
+      });
+      // console.log(mappedInvoices);
 
-    getUserByEmail(user.email).then((data) => {
-      if (data) {
-        //TODO - Traer el id del user
-        const userId: string = 'KObY1Tueq9xb7n5h6ekz';
-        getUserInvoices(userId).then((data) => {
-          const mappedInvoices = data.map((invoice) => {
-            return {
-              id: invoice.id,
-              status: invoice.status,
-              from: invoice.companyName,
-              to: invoice.toCompanyName,
-              amount: invoice.total,
-              payDate: invoice.dueDate,
-            };
-          });
-
-          setInvoices(mappedInvoices);
-        });
-      }
+      setInvoices(mappedInvoices);
     });
-  }, [invoices, user.email]);
+  }, [user.id]);
+
+  const columns = [
+    {
+      accessorKey: 'status',
+      header: () => (
+        <div className="text-base font-bold text-black">Status</div>
+      ),
+      cell: ({ row }: { row: any }) => {
+        let message;
+        let styles;
+        const isPastDue = compareDates(row.original.dueDate);
+        if (isPastDue) {
+          row.original.status = 'past due';
+        }
+        let formattedPayDateStr;
+        if (row.original.payDate) {
+          formattedPayDateStr = formatDate(row.original.payDate);
+        }
+
+        switch (row.original.status) {
+          case 'paid':
+            message = `Paid on ${formattedPayDateStr}`;
+            styles =
+              'text-green-700 bg-green-100 font-medium text-base p-2 pl-4';
+            break;
+          case 'pending':
+            message = 'Pending Payment';
+            styles = 'bg-slate-100 font-medium text-base p-2 pl-4';
+            break;
+          case 'past due':
+            message = 'Past Due';
+            styles = 'bg-red-100 font-medium text-base p-2 pl-4 text-red-600';
+            break;
+          default:
+            message = 'Estado desconocido';
+        }
+        return <div className={styles}>{message}</div>;
+      },
+    },
+    {
+      accessorKey: 'invoiceId',
+      header: () => (
+        <div className="text-base font-bold text-black">Invoice #</div>
+      ),
+      cell: ({ row }: { row: any }) => {
+        return (
+          <div className="font-medium text-base p-2 pl-4">
+            {row.original.id}
+          </div>
+        );
+      },
+    },
+
+    {
+      accessorKey: 'from',
+      header: () => <div className="text-base font-bold text-black">From</div>,
+      cell: () => {
+        return (
+          <div className="font-medium text-base p-2 pl-4">
+            {user.companyName}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'to',
+      header: () => <div className="text-base font-bold text-black">To</div>,
+      cell: ({ row }: { row: any }) => {
+        return (
+          <div className="font-medium text-base p-2 pl-4">
+            {row.original.to}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'amount',
+      header: () => (
+        <div className="text-base font-bold text-black">Amount</div>
+      ),
+      cell: ({ row }: { row: any }) => {
+        return (
+          <div className="font-medium text-base p-2 pl-4">
+            ${row.original.amount}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'link',
+      header: () => <div className="text-right"></div>,
+      cell: ({ row }: { row: any }) => {
+        return (
+          <div className="text-right font-medium text-sky-600 p-2 pr-4 text-base">
+            <Link to={`/view-invoice/${user.id}/${row.original.id}`}>View</Link>
+          </div>
+        );
+      },
+    },
+  ];
 
   if (!connections.userInfo || !connections.stripe || !connections.metamask) {
     return (
@@ -116,121 +213,6 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
       </div>
     );
   }
-
-  const columns = [
-    {
-      accessorKey: 'status',
-      header: () => (
-        <div className="text-base font-bold text-black">Status</div>
-      ),
-      cell: ({ row }) => {
-        let message;
-        let styles;
-        const payDateTimestamp = row.original.payDate;
-        const currentDateTimestamp = new Date()
-          .getTime()
-          .toString()
-          .substring(0, 8);
-        const currentDateTimestamp2 = parseInt(currentDateTimestamp);
-
-        const isPastDue = payDateTimestamp.seconds < currentDateTimestamp2;
-
-        const payDate = new Date(
-          payDateTimestamp.seconds * 1000 +
-            payDateTimestamp.nanoseconds / 1000000
-        );
-        const formatDate = (date: Date) => {
-          const month = date.getMonth() + 1;
-          const day = date.getDate();
-          const year = date.getFullYear();
-          return `${month}/${day}/${year}`;
-        };
-
-        const formattedPayDateStr = formatDate(payDate);
-
-        switch (row.original.status) {
-          case 'paid':
-            message = `Paid on ${formattedPayDateStr}`;
-            styles =
-              'text-green-700 bg-green-100 font-medium text-base p-2 pl-4';
-            break;
-          case 'pending':
-            if (isPastDue) {
-              message = 'Past Due';
-              styles = 'bg-red-100 font-medium text-base p-2 pl-4 text-red-600';
-            } else {
-              message = 'Pending Payment';
-              styles = 'bg-slate-100 font-medium text-base p-2 pl-4';
-            }
-            break;
-
-          default:
-            message = 'Estado desconocido';
-        }
-        return <div className={styles}>{message}</div>;
-      },
-    },
-    {
-      accessorKey: 'invoiceId',
-      header: () => (
-        <div className="text-base font-bold text-black">Invoice #</div>
-      ),
-      cell: ({ row }) => {
-        return (
-          <div className="font-medium text-base p-2 pl-4">
-            {row.original.id}
-          </div>
-        );
-      },
-    },
-
-    {
-      accessorKey: 'from',
-      header: () => <div className="text-base font-bold text-black">From</div>,
-      cell: ({ row }) => {
-        return (
-          <div className="font-medium text-base p-2 pl-4">
-            {row.original.from}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'to',
-      header: () => <div className="text-base font-bold text-black">To</div>,
-      cell: ({ row }) => {
-        return (
-          <div className="font-medium text-base p-2 pl-4">
-            {row.original.to}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'amount',
-      header: () => (
-        <div className="text-base font-bold text-black">Amount</div>
-      ),
-      cell: ({ row }) => {
-        return (
-          <div className="font-medium text-base p-2 pl-4">
-            ${row.original.amount}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'link',
-      header: () => <div className="text-right"></div>,
-      cell: ({ row }) => {
-        return (
-          <div className="text-right font-medium text-sky-600 p-2 pr-4 text-base">
-            <Link to={`/view-invoice/${row.original.id}`}>View</Link>
-          </div>
-        );
-      },
-    },
-  ];
 
   return (
     <div className="hidden  sm:flex flex-col w-full bg-white rounded-lg shadow-md">

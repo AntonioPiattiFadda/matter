@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from './ui/button';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import classNames from 'classnames';
 
 export type Payment = {
   id: string;
@@ -39,6 +40,10 @@ export function DataTable<TData, TValue>({
   data,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   const table = useReactTable({
     data,
@@ -46,11 +51,16 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onColumnFiltersChange: setColumnFilters,
+    onPaginationChange: setPagination,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       columnFilters,
+      pagination,
     },
   });
+
+  const totalPages = Math.ceil(data.length / pagination.pageSize);
+  const pageIndices = Array.from({ length: totalPages }, (_, i) => i);
 
   const handleChangeTab = (value: string) => {
     table.getColumn('status')?.setFilterValue(value);
@@ -163,20 +173,41 @@ export function DataTable<TData, TValue>({
           }}
         >
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
+            <img
+              className="h-5 mr-2"
+              src="../../public/ArrowLeft.png"
+              alt=" arrow right"
+            />
             Previous
           </Button>
+          {pageIndices.map((index) => (
+            <Button
+              variant="ghost"
+              key={index}
+              className={classNames('', {
+                'bg-slate-100': index === pagination.pageIndex,
+              })}
+            >
+              {index + 1}
+            </Button>
+          ))}
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
             Next
+            <img
+              className="h-5 ml-2"
+              src="../../public/ArrowRight.png"
+              alt=" arrow right"
+            />
           </Button>
         </div>
       </div>

@@ -1,37 +1,57 @@
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
+import { CompanyInfo } from '@/types';
 
 interface CompanyInfoProps {
   editable: boolean;
-  // companyName: string;
-  // email: string;
-  // state: string;
-  // address: string;
-  // taxId: string;
+  info: CompanyInfo;
+  setShowForm?: (value: boolean) => void;
+  setConnections?: React.Dispatch<
+    React.SetStateAction<{
+      userInfo: boolean;
+      stripe: boolean;
+      metamask: boolean;
+    }>
+  >;
 }
 
-const CompanyInfo = ({ editable }: CompanyInfoProps) => {
+const CompanyInfo = ({
+  editable,
+  info,
+  setShowForm,
+  setConnections,
+}: CompanyInfoProps) => {
+  const handleEditInfo = () => {
+    if (setShowForm) {
+      setShowForm(true);
+    }
+    if (setConnections) {
+      setConnections((prevState) => ({ ...prevState, userInfo: false }));
+    }
+  };
+
   return (
     <div>
       <CardDescription className="mb-2  text-black font-medium text-xl">
-        Your Company Name
+        {info.companyName}
       </CardDescription>
       <CardDescription className="text-xs font-medium mb-2">
-        name@email.com{' '}
+        {info.businessEmail}
       </CardDescription>
       <CardDescription className="text-xs font-medium">
-        860 Forest Ave, Palo Alto,{' '}
+        {info.adress}
       </CardDescription>
       <CardDescription className="text-xs font-medium mb-2">
-        California 94301{' '}
+        {info.city && `${info.city},${info.state},${info.country},${info.zip}`}
       </CardDescription>
       <CardDescription className="text-xs font-medium">
-        Tax IcD: 12345
+        {info.taxId && `Tax ID: ${info.taxId}`}
       </CardDescription>
       {editable && (
         <Button
           className="flex font-normal text-sm p-0 text-sky-500"
           variant="link"
+          onClick={handleEditInfo}
         >
           Edit Details
         </Button>

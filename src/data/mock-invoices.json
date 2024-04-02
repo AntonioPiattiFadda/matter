@@ -1,116 +1,90 @@
 [
   {
-    "status": "Paid",
+    "status": "paid",
     "invoiceId": "INV-001",
     "from": "Company A",
     "to": "Client X",
     "amount": 1000,
-    "link": "https://example.com/invoice/INV-001"
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Pending",
-    "invoiceId": "INV-002",
-    "from": "Company B",
-    "to": "Client Y",
-    "amount": 1500,
-    "link": "https://example.com/invoice/INV-002"
+    "status": "pending",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Past Due",
-    "invoiceId": "INV-003",
-    "from": "Company C",
-    "to": "Client Z",
-    "amount": 800,
-    "link": "https://example.com/invoice/INV-003"
-  },
-
-  {
-    "status": "Paid",
-    "invoiceId": "INV-003",
-    "from": "Company C",
-    "to": "Client Z",
-    "amount": 800,
-    "link": "https://example.com/invoice/INV-003"
+    "status": "paid",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Pending",
-    "invoiceId": "INV-002",
-    "from": "Company B",
-    "to": "Client Y",
-    "amount": 1500,
-    "link": "https://example.com/invoice/INV-002"
+    "status": "pending",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Pending",
-    "invoiceId": "INV-002",
-    "from": "Company B",
-    "to": "Client Y",
-    "amount": 1500,
-    "link": "https://example.com/invoice/INV-002"
+    "status": "paid",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Past Due",
-    "invoiceId": "INV-003",
-    "from": "Company C",
-    "to": "Client Z",
-    "amount": 800,
-    "link": "https://example.com/invoice/INV-003"
+    "status": "pending",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Pending",
-    "invoiceId": "INV-002",
-    "from": "Company B",
-    "to": "Client Y",
-    "amount": 1500,
-    "link": "https://example.com/invoice/INV-002"
+    "status": "paid",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Past Due",
-    "invoiceId": "INV-003",
-    "from": "Company C",
-    "to": "Client Z",
-    "amount": 800,
-    "link": "https://example.com/invoice/INV-003"
+    "status": "pending",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Paid",
-    "invoiceId": "INV-003",
-    "from": "Company C",
-    "to": "Client Z",
-    "amount": 800,
-    "link": "https://example.com/invoice/INV-003"
+    "status": "paid",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Pending",
-    "invoiceId": "INV-002",
-    "from": "Company B",
-    "to": "Client Y",
-    "amount": 1500,
-    "link": "https://example.com/invoice/INV-002"
-  },
-
-  {
-    "status": "Paid",
-    "invoiceId": "INV-003",
-    "from": "Company C",
-    "to": "Client Z",
-    "amount": 800,
-    "link": "https://example.com/invoice/INV-003"
+    "status": "pending",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   },
   {
-    "status": "Pending",
-    "invoiceId": "INV-002",
-    "from": "Company B",
-    "to": "Client Y",
-    "amount": 1500,
-    "link": "https://example.com/invoice/INV-002"
-  },
-  {
-    "status": "Past Due",
-    "invoiceId": "INV-003",
-    "from": "Company C",
-    "to": "Client Z",
-    "amount": 800,
-    "link": "https://example.com/invoice/INV-003"
+    "status": "paid",
+    "invoiceId": "INV-001",
+    "from": "Company A",
+    "to": "Client X",
+    "amount": 1000,
+    "payDate": "2021-01-01"
   }
 ]
