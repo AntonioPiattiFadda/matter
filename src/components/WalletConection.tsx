@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import MetamaskConectionInfo from './MetamaskConectionInfo';
 import StripeConectionInfo from './StripeConectionInfo';
 import CompanyInfo from './CompanyInfo';
 import { SaveCompanyInfoschema } from '@/Validator';
@@ -17,6 +16,7 @@ import classNames from 'classnames';
 import { z, ZodError } from 'zod';
 import { Connections, User } from '@/types';
 import { getUserByEmail, updateUser } from '@/Services';
+import { DiscoverWalletProviders } from './DiscoverWalletProviders';
 
 interface WalletConectionProps {
   setConnections: React.Dispatch<
@@ -124,12 +124,12 @@ const WalletConection = ({
     }));
   };
 
-  const handleMetamaskConnection = () => {
-    setConnections((prevConnections: Connections) => ({
-      ...prevConnections,
-      metamask: true,
-    }));
-  };
+  // const handleMetamaskConnection = () => {
+  //   setConnections((prevConnections: Connections) => ({
+  //     ...prevConnections,
+  //     metamask: true,
+  //   }));
+  // };
   // const handleStripeDisconnection = () => {
   //   setAllConected(false);
   // };
@@ -398,7 +398,12 @@ const WalletConection = ({
               </>
             )}
 
-            {connections.metamask ? (
+            <DiscoverWalletProviders
+              connections={connections}
+              setConnections={setConnections}
+            />
+
+            {/* {connections.metamask ? (
               <MetamaskConectionInfo />
             ) : (
               <>
@@ -418,7 +423,7 @@ const WalletConection = ({
                   />{' '}
                 </Button>
               </>
-            )}
+            )} */}
           </div>
           <CardDescription>
             <div className="flex w-full gap-3 mt-2">
