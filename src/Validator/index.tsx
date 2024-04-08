@@ -33,8 +33,10 @@ export const SaveNewInvoiceInfoSchema = z.object({
   total: z.number(),
   notes: z.string(),
   terms: z.string(),
+  metamaskAddress: z.string(),
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const loginWithEmailSchema = z.object({
   email: z.string().email(),
 });

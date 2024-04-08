@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { getUserByEmail } from '@/Services';
+import { useEffect, useState } from 'react';
 import { loginWithEmailSchema } from '@/Validator';
 import {
   Card,
@@ -12,17 +11,42 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import classNames from 'classnames';
 import { z } from 'zod';
+import {
+  getAuth,
+  isSignInWithEmailLink,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
+} from 'firebase/auth';
+import { createUser } from '@/Services';
+
+const actionCodeSettings = {
+  // URL you want to redirect back to. The domain (www.example.com) for this
+  // URL must be in the authorized domains list in the Firebase Console.
+  url: 'https://localhost/login?code=true',
+  // This must be true.
+  handleCodeInApp: true,
+};
 
 const Login = () => {
   const [sendedCode, setSendedCode] = useState(false);
   const [codeError, setCodeError] = useState(false);
   const [email, setEmail] = useState('');
-  const [user, setUser] = useState({});
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<z.ZodError | null>(null);
+  const [searchParams] = useSearchParams();
+
+  const auth = getAuth();
+  const code = searchParams.get('code');
+
+  useEffect(() => {
+    if (code) {
+      setSendedCode(true);
+      validateSingInWithEmailLink();
+    }
+  }, [code]);
 
   const handleChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -32,17 +56,14 @@ const Login = () => {
     setLoading(true);
     try {
       loginWithEmailSchema.parse({ email });
-      getUserByEmail(email).then((user) => {
-        //NOTE - Enviar el codigo por mail
-        setSendedCode(true);
-        setLoading(false);
-
-        if (!user) {
-          //FIXME - Crear el usuario y enviar el mail
-          return;
-        }
-        setUser(user);
-      });
+      sendSignInLinkToEmail(auth, email, actionCodeSettings)
+        .then(() => {
+          window.localStorage.setItem('emailForSignIn', email);
+        })
+        .catch((error) => {
+          console.log(error);
+          setLoading(false);
+        });
     } catch (error) {
       if (error instanceof z.ZodError) {
         setErrors(error);
@@ -54,12 +75,34 @@ const Login = () => {
     }
   };
 
-  const validateCode = () => {
-    //NOTE -  - Logica de validacion del codigo
-    //NOTE Vamos a guardar el local storage un email para que no se tenga que loguear siempre. Por ahora es de prueba
-    const usuarioString = JSON.stringify(user);
-    sessionStorage.setItem('user', usuarioString);
-    setCodeError(false);
+  const validateSingInWithEmailLink = () => {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      let email = window.localStorage.getItem('emailForSignIn');
+
+      if (!email) {
+        email =
+          window.prompt('Please provide your email for confirmation') ?? '';
+      }
+
+      signInWithEmailLink(auth, email, window.location.href)
+        .then((result) => {
+          window.localStorage.removeItem('emailForSignIn');
+          const user = {
+            email,
+            id: result.user.uid,
+          };
+          window.sessionStorage.setItem('user', JSON.stringify(user));
+
+          createUser({ email: user.email }, user.id).then(() => {
+            alert('Conexion exitosa');
+            window.location.href = '/dashboard';
+          });
+        })
+        .catch((error) => {
+          setCodeError(true);
+          console.log(error);
+        });
+    }
   };
 
   if (sendedCode) {
@@ -76,7 +119,20 @@ const Login = () => {
               />
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardDescription className="text-sm m-2 ml-6">
+            Estamos validando tu email
+          </CardDescription>
+          {codeError && (
+            <Button
+              className="flex p-1 text-sky-500 font-normal text-base m-4 ml-5 mb-5"
+              variant="link"
+              onClick={handleSendCode}
+              disabled={loading}
+            >
+              Send email again
+            </Button>
+          )}
+          {/* <CardContent>
             <CardDescription className="text-slate-900 font-bold text-lg">
               {' '}
               Enter the code in your email.
@@ -94,7 +150,7 @@ const Login = () => {
               </Button>
             </CardDescription>
 
-            <form>
+            <form onSubmit={validateSingInWithEmailLink}>
               <div className="grid w-full items-center gap-4">
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="code">Code</Label>
@@ -106,10 +162,10 @@ const Login = () => {
               </div>
               <Button
                 className="flex mt-2 font-normal text-base"
-                onClick={validateCode}
                 disabled={loading}
+                type="submit"
               >
-                <Link to={'/dashboard'}> Submit Code</Link>
+                Send Code
               </Button>
             </form>
           </CardContent>
@@ -118,7 +174,7 @@ const Login = () => {
               By signing up you agree to terms on
               business.matter.market/invoiceterms
             </CardDescription>
-          </CardFooter>
+          </CardFooter> */}
         </Card>
       </div>
     );
@@ -156,14 +212,20 @@ const Login = () => {
                 />
               </div>
             </div>
-            <Button
-              disabled={loading}
-              className="flex mt-2 text-sm font-normal"
-              type="button"
-              onClick={handleSendCode}
-            >
-              Send Code
-            </Button>
+            {loading ? (
+              <CardDescription className="text-sm mt-2 ">
+                Verifica tu casilla de mail
+              </CardDescription>
+            ) : (
+              <Button
+                disabled={loading}
+                className="flex mt-2 text-sm font-normal"
+                type="button"
+                onClick={handleSendCode}
+              >
+                Send Code
+              </Button>
+            )}
           </form>
         </CardContent>
         <CardFooter className="flex justify-between">

@@ -27,6 +27,8 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
   useEffect(() => {
     getUserInvoices(user.id || '').then((data) => {
       const mappedInvoices = data.map((invoice) => {
+        console.log(invoice);
+
         return {
           id: invoice.id,
           status: invoice.status,
@@ -37,8 +39,6 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
           payDate: invoice.payDate,
         };
       });
-      // console.log(mappedInvoices);
-
       setInvoices(mappedInvoices);
     });
   }, [user.id]);
@@ -98,10 +98,10 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
     {
       accessorKey: 'from',
       header: () => <div className="text-base font-bold text-black">From</div>,
-      cell: () => {
+      cell: ({ row }: { row: any }) => {
         return (
           <div className="font-medium text-base p-2 pl-4">
-            {user.companyName}
+            {row.original.from}
           </div>
         );
       },

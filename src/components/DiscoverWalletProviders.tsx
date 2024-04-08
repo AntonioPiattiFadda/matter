@@ -3,6 +3,7 @@ import { useSyncProviders } from '../Hooks/useSyncProviders';
 import { formatAddress } from '@/utils';
 import { CardDescription } from './ui/card';
 import { Button } from './ui/button';
+import Web3 from 'web3';
 
 interface DiscoverWalletProvidersProps {
   connections: {
@@ -27,6 +28,7 @@ export const DiscoverWalletProviders = ({
   const [userAccount, setUserAccount] = useState<string>('');
 
   const providers = useSyncProviders();
+  const web3Provider = new Web3(window.ethereum);
 
   const handleConnect = async (providerWithInfo: EIP6963ProviderDetail) => {
     const accounts = await providerWithInfo.provider
@@ -36,9 +38,11 @@ export const DiscoverWalletProviders = ({
     if (accounts?.[0]) {
       setSelectedWallet(providerWithInfo);
       setUserAccount(accounts?.[0]);
+      window.sessionStorage.setItem('userAccount', accounts?.[0]);
       if (setConnections) {
         setConnections((prevState) => ({ ...prevState, metamask: true }));
       }
+      console.log(accounts?.[0]);
       // TODO Guardar la direccion del pag para que el cliente pueda pagar
     }
   };
@@ -46,6 +50,7 @@ export const DiscoverWalletProviders = ({
   const handleDisconnect = () => {
     setSelectedWallet(undefined);
     setUserAccount('');
+    window.sessionStorage.removeItem('userAccount');
     if (setConnections) {
       setConnections((prevState) => ({ ...prevState, metamask: false }));
     }
@@ -75,14 +80,6 @@ export const DiscoverWalletProviders = ({
                     />{' '}
                   </Button>
                 </div>
-                // <button
-                //   className="bg-slate-500"
-                //   key={provider.info.uuid}
-                //   onClick={() => handleConnect(provider)}
-                // >
-                //   <img src={provider.info.icon} alt={provider.info.name} />
-                //   <div>{providerz.info.name}</div>
-                // </button>
               ))
             ) : (
               <div>There are no announced providers.</div>
@@ -91,8 +88,6 @@ export const DiscoverWalletProviders = ({
           <hr />
         </>
       )}
-
-      {/* <h2>{userAccount ? '' : 'No '}Wallet Selected</h2> */}
       {userAccount && (
         <div>
           <CardDescription className="mb-2 mt-2 text-black font-medium">
@@ -109,16 +104,6 @@ export const DiscoverWalletProviders = ({
             Disconnect
           </Button>
         </div>
-        // <div>
-        //   <div>
-        //     <img
-        //       src={selectedWallet.info.icon}
-        //       alt={selectedWallet.info.name}
-        //     />
-        //     <div>{selectedWallet.info.name}</div>
-        //     <div>({formatAddress(userAccount)})</div>
-        //   </div>
-        // </div>
       )}
     </>
   );

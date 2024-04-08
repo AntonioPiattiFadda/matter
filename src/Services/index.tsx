@@ -9,6 +9,7 @@ import {
   doc,
   updateDoc,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
 
 export const getUserByEmail = async (email: string) => {
@@ -51,16 +52,23 @@ export const getUserById = async (userId: string): Promise<User | null> => {
   }
 };
 
-export const createUser = async (userData: CreateUser) => {
+export const createUser = async (userData: CreateUser, userId: string) => {
   try {
     const userCollection = collection(db, 'users');
 
-    const newUserRef = await addDoc(userCollection, userData);
+    const userRef = doc(userCollection, userId); // Crear referencia con el ID deseado
 
-    //NOTE probar esta funcion
-    console.log('Usuario creado con ID: ', newUserRef.id);
+    const userDoc = await getDoc(userRef);
 
-    return newUserRef.id;
+    if (userDoc.exists()) {
+      return;
+    }
+
+    await setDoc(userRef, userData); // Utilizar setDoc en lugar de addDoc
+
+    console.log('Usuario creado con ID: ', userId);
+
+    return userId;
   } catch (error) {
     console.error('Error al crear el usuario: ', error);
     throw new Error('No se pudo crear el usuario');
@@ -73,6 +81,8 @@ export const updateUser = async (
   updateData: UpdateCompanyInfo & { [x: string]: any }
 ) => {
   try {
+    console.log(userId);
+
     const userDocRef = doc(db, 'users', userId);
 
     await updateDoc(userDocRef, updateData);

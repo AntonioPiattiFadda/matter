@@ -10,22 +10,16 @@ const Dashboard = () => {
     metamask: false,
   });
   const [user, setUser] = useState({
-    name: '',
+    id: '',
     email: '',
   });
 
   useEffect(() => {
     const usuarioGuardado = sessionStorage.getItem('user');
     if (!usuarioGuardado) {
-      //FIXME - No deberia llegar hasta aca sin haber un usuario asique te deberia redirigir al login
-      setUser({
-        name: '',
-        email: '',
-      });
       return;
     }
     const usuarioObjeto = JSON.parse(usuarioGuardado);
-    //FIXME - Traer al usuario y fijarme si tiene los datos de coneccion con strupe y MM y si tiene los datos de la compania
     setUser(usuarioObjeto);
   }, []);
 

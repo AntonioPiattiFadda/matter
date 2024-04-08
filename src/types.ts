@@ -52,6 +52,7 @@ export interface Invoice {
   terms: string;
   status: string;
   items?: InvoiceItem[];
+  metamaskAddress?: string;
 }
 export interface InvoiceItem {
   description: string;

@@ -15,6 +15,7 @@ import CompanyInfo from '../components/CompanyInfo';
 import { Invoice, User } from '@/types';
 import { formatDate } from '@/utils/FormatDate';
 import classNames from 'classnames';
+import { DiscoverWalletProvidersPay } from '@/components/DiscoverWalletProvidersPay';
 
 const NoBorderStyle = {
   borderTop: 'none',
@@ -41,6 +42,7 @@ const ViewInvoice = () => {
     notes: '',
     terms: '',
     status: '',
+    metamaskAddress: '',
   });
   const [invoiceItems, setInvoiceItems] = useState([
     {
@@ -121,7 +123,7 @@ const ViewInvoice = () => {
   }, [userId, invoice, invoiceId]);
 
   const handleCopy = () => {
-    const url = `http://localhost:5173/view-invoice/${userId}/${invoice.id}`;
+    const url = `http://localhost/view-invoice/${userId}/${invoice.id}`;
     navigator.clipboard.writeText(url);
     setCoppied(true);
     setTimeout(() => {
@@ -294,37 +296,43 @@ const ViewInvoice = () => {
           </CardDescription>
         </CardContent>
 
-        <div className="flex flex-col justify-center items-center sm:grid sm:gap-4  grid-col-2  sm:pt-2">
-          <CardDescription className="text-black text-base m-5 sm:m-0 sm:col-start-1 sm:w-[300px] row-start-1 sm:translate-y-[-1rem]">
-            Pay with crypto or card.
-          </CardDescription>
-          <div className=" sm:flex col-start-2 sm:w-[420px] justify-end">
-            <Button className="text-base m-2 w-11/12 mb-5 sm:w-36 sm:text-sm">
+        {invoice.status === 'paid' ? null : (
+          <div className="flex flex-col justify-center items-center sm:grid sm:gap-4  grid-col-2  sm:pt-2">
+            <CardDescription className="text-black text-base m-5 sm:m-0 sm:col-start-1 sm:w-[300px] row-start-1 sm:translate-y-[-1rem]">
+              Pay with crypto or card.
+            </CardDescription>
+            <div className=" sm:flex col-start-2 sm:w-[420px] justify-end">
+              <DiscoverWalletProvidersPay
+                recipientWallet={invoice.metamaskAddress || ''}
+                totalAmount={invoice.total}
+              />
+              {/* <Button className="text-base m-2 w-11/12 mb-5 sm:w-36 sm:text-sm">
               <img
                 className="h-7 mr-2"
                 src="../../public/ETHLogo.png"
                 alt="eth icon"
               />
               Pay with ETH
-            </Button>
-            <Button className="text-base m-2 w-11/12 mb-5 sm:w-36 sm:text-sm">
+            </Button> */}
+              <Button className="text-base m-2 w-11/12 mb-5 sm:w-36 sm:text-sm">
+                <img
+                  className="h-7 mr-2"
+                  src="../../public/WalletLogo.png"
+                  alt="wallet icon"
+                />
+                Pay with Stripe
+              </Button>
+            </div>
+            <CardDescription className="flex gap-2 items-center mb-5 col-start-1 row-start-1 sm:translate-y-[1.2rem]">
+              Powered by
               <img
-                className="h-7 mr-2"
-                src="../../public/WalletLogo.png"
-                alt="wallet icon"
+                className="h-5 translate-y-[-.05rem]"
+                src="../../public/MatterAlt.png"
+                alt="matter logo"
               />
-              Pay with ETH
-            </Button>
+            </CardDescription>
           </div>
-          <CardDescription className="flex gap-2 items-center mb-5 col-start-1 row-start-1 sm:translate-y-[1.2rem]">
-            Powered by
-            <img
-              className="h-5 translate-y-[-.05rem]"
-              src="../../public/MatterAlt.png"
-              alt="matter logo"
-            />
-          </CardDescription>
-        </div>
+        )}
       </Card>
       <Button
         className="bg-slate-200 text-black text-base m-4 lg:absolute top-10 right-0"

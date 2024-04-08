@@ -50,7 +50,6 @@ const WalletConection = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    //FIXME - Este user email tiene qu eestar en la sesion
     getUserByEmail(user.email).then((data: User | null) => {
       if (!data) {
         return;
@@ -94,11 +93,8 @@ const WalletConection = ({
     setLoading(true);
     try {
       SaveCompanyInfoschema.parse(companyInfo);
-      //NOTE - Enviar la info a la base de datos
-      const userId: string = 'KObY1Tueq9xb7n5h6ekz';
-
-      updateUser(userId, companyInfo).then((data) => {
-        console.log(data);
+      const userId = user.id ?? '';
+      updateUser(userId, companyInfo).then(() => {
         setLoading(false);
         setConnections((prevConnections: Connections) => ({
           ...prevConnections,

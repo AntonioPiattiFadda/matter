@@ -9,6 +9,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    port: 80,
+  },
 });
 
 // import { defineConfig } from 'vite'

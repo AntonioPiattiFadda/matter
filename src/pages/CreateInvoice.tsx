@@ -43,28 +43,33 @@ const CreateInvoice = () => {
     zip: '',
     taxId: '',
   });
-  const [userId, setUserId] = useState<string>('');
-
+  const [user, setUser] = useState({
+    id: '',
+    email: '',
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    //FIXME - Este user email tiene qu eestar en la sesion
-    getUserByEmail('antonio@gmail.com').then((data: User | null) => {
-      if (!data) {
-        return;
-      }
-      setUserId(data.id ?? '');
-      setUserCompanyInfo({
-        companyName: data.companyName || '',
-        businessEmail: data.businessEmail || '',
-        adress: data.adress || '',
-        city: data.city || '',
-        state: data.state || '',
-        zip: data.zip || '',
-        country: data.country || '',
-        taxId: data.taxId || '',
+    const user = sessionStorage.getItem('user');
+    if (user) {
+      const parsedUser = JSON.parse(user);
+      setUser(parsedUser);
+      getUserByEmail(parsedUser.email).then((data: User | null) => {
+        if (!data) {
+          return;
+        }
+        setUserCompanyInfo({
+          companyName: data.companyName || '',
+          businessEmail: data.businessEmail || '',
+          adress: data.adress || '',
+          city: data.city || '',
+          state: data.state || '',
+          zip: data.zip || '',
+          country: data.country || '',
+          taxId: data.taxId || '',
+        });
       });
-    });
+    }
   }, []);
 
   const [invoiceInfo, setInvoiceInfo] = useState<Invoice>({
@@ -83,6 +88,7 @@ const CreateInvoice = () => {
     terms: '',
     status: '',
     payDate: null,
+    metamaskAddress: '',
   });
 
   const [items, setItems] = useState<InvoiceItem[]>([
@@ -200,9 +206,7 @@ const CreateInvoice = () => {
   const handleSaveInvoice = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-
-    //FIXME traer la from company desde el usuario para agregarla a los invoices
-
+    const metamaskAddress = sessionStorage.getItem('userAccount');
     const invoiceInfoToValidate = {
       ...invoiceInfo,
       items: items,
@@ -210,21 +214,27 @@ const CreateInvoice = () => {
       payDate: null,
       total: total,
       subTotal: subTotal,
+      companyName: userCompanyInfo.companyName,
+      metamaskAddress: metamaskAddress || '',
     };
 
     try {
       SaveNewInvoiceInfoSchema.parse(invoiceInfoToValidate);
       //FIXME - Ver como manejo el userId para mantener la sesion
-      createInvoice(invoiceInfoToValidate, 'KObY1Tueq9xb7n5h6ekz').then(
-        (res) => {
-          setLoading(false);
-          setSuccessCreation({
-            status: true,
-            id: res,
-            copied: false,
-          });
-        }
-      );
+      createInvoice(
+        {
+          ...invoiceInfoToValidate,
+          metamaskAddress: invoiceInfoToValidate.metamaskAddress || undefined,
+        },
+        user.id
+      ).then((res) => {
+        setLoading(false);
+        setSuccessCreation({
+          status: true,
+          id: res,
+          copied: false,
+        });
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         setErrors(error);
@@ -239,7 +249,7 @@ const CreateInvoice = () => {
 
   const handleCopy = () => {
     //TODO - Cambiar la URL por la de las variables de entorno
-    const url = `http://localhost:5173/view-invoice/${userId}/${successCreation.id}`;
+    const url = `http://localhost/view-invoice/${user.id}/${successCreation.id}`;
     navigator.clipboard.writeText(url);
     setSuccessCreation({
       ...successCreation,
