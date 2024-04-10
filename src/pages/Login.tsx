@@ -46,6 +46,7 @@ const Login = () => {
       setSendedCode(true);
       validateSingInWithEmailLink();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
   const handleChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {

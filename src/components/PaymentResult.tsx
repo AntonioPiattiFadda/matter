@@ -18,6 +18,7 @@ const PaymentResult = () => {
         payDate: new Date(),
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -52,6 +52,7 @@ const StripeConnection = ({
         }
       }
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parsedUser.id]);
 
   useEffect(() => {
@@ -71,6 +72,7 @@ const StripeConnection = ({
           console.error(err);
         });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account_id, success, setConnections]);
 
   const handleStripeConnection = () => {
