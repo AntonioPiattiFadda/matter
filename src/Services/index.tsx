@@ -149,8 +149,8 @@ export const getInvoiceById = async (
 
     if (invoiceSnapshot.exists()) {
       const invoiceData = {
-        id: invoiceSnapshot.id,
         ...invoiceSnapshot.data(),
+        id: invoiceSnapshot.id,
       };
 
       return invoiceData as Invoice;

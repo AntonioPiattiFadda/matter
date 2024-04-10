@@ -24,7 +24,7 @@ import { z, ZodError } from 'zod';
 import classNames from 'classnames';
 import { Invoice, InvoiceItem, User } from '@/types';
 import { createInvoice, getUserByEmail } from '@/Services';
-import CompanyInfo from '../components/CompanyInfo';
+import CompanyInfo from '../components/CompanyInfoComponent';
 
 const NoBorderStyle = {
   borderTop: 'none',
@@ -77,6 +77,8 @@ const CreateInvoice = () => {
   }, []);
 
   const [invoiceInfo, setInvoiceInfo] = useState<Invoice>({
+    id: '',
+    serialNumber: 0,
     date: null,
     dueDate: null,
     toCompanyName: '',
@@ -153,6 +155,13 @@ const CreateInvoice = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    if (name === 'serialNumber') {
+      setInvoiceInfo({
+        ...invoiceInfo,
+        [name]: parseInt(value),
+      });
+      return;
+    }
     if (name === 'tax' || name === 'shipping' || name === 'discount') {
       if (!parseInt(value)) {
         setInvoiceInfo({
@@ -186,16 +195,19 @@ const CreateInvoice = () => {
     index: number
   ) => {
     const { name, value } = e.target;
+
+    //FIXME - Convertir a value el valor final
     if (name === 'price' || name === 'quantity' || name === 'amount') {
       const updatedItems = [...items];
       updatedItems[index] = {
         ...updatedItems[index],
-        [name]: parseInt(value),
+        [name]: parseFloat(value),
       };
 
       setItems(updatedItems);
       return;
     }
+
     const updatedItems = [...items];
     updatedItems[index] = {
       ...updatedItems[index],
@@ -241,6 +253,7 @@ const CreateInvoice = () => {
       if (error instanceof z.ZodError) {
         setErrors(error);
         setLoading(false);
+        console.log(error);
 
         setTimeout(() => {
           setErrors(null);
@@ -250,7 +263,6 @@ const CreateInvoice = () => {
   };
 
   const handleCopy = () => {
-    //TODO - Cambiar la URL por la de las variables de entorno
     const url = `http://localhost/view-invoice/${user.id}/${successCreation.id}`;
     navigator.clipboard.writeText(url);
     setSuccessCreation({
@@ -326,9 +338,17 @@ const CreateInvoice = () => {
                 Invoice
               </Label>
               <Input
-                disabled
                 placeholder="000001"
-                className="font-semibold text-black"
+                className={classNames('font-semibold text-black', {
+                  'border-red-500':
+                    errors &&
+                    errors.issues.some((issue) => {
+                      return issue.path[0] === 'serialNumber';
+                    }),
+                })}
+                id="serialNumber"
+                name="serialNumber"
+                onChange={handleChange}
               />
             </CardDescription>
             <CardDescription className="flex flex-col justify-between sm:flex-row sm:gap-2">

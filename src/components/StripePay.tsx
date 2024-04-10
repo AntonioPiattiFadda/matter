@@ -1,11 +1,12 @@
 import axios from 'axios';
 import { Button } from './ui/button';
 // import { updateInvoice } from '@/Services';
-import PopUpMetamask from './PopUpMetamask';
 import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from './CheckoutForm';
+
+const SERVER_LINK = import.meta.env.VITE_STRIPE_SERVER_LINK;
 
 interface StripePayProps {
   stripeId: string;
@@ -14,7 +15,9 @@ interface StripePayProps {
   userId: string;
 }
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_SECRET_KEY || '');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_SECRET_KEY || '', {
+  locale: 'en',
+});
 
 const StripePay = ({
   stripeId,
@@ -22,30 +25,29 @@ const StripePay = ({
   invoiceId,
   userId,
 }: StripePayProps) => {
-
-  const [showPopUp, setShowPopUp] = useState({
-    status: false,
-    message: '',
-  });
-  const [transactionId, setTransactionId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
+  console.log(SERVER_LINK);
 
-  const user = window.sessionStorage.getItem('user');
-  const parserUser = JSON.parse(user || '{}');
+  // const appearance = {
+  //   theme: 'stripe',
+  // };
+  // const options = {
+  //   clientSecret,
+  //   appearance,
+  // };
 
-  const appearance = {
-    theme: 'stripe',
-  };
-  const options = {
-    clientSecret,
-    appearance,
-  };
+  // const options = {
+  //   clientSecret,
+  //   appearance: {
+  //     theme: 'stripe',
+  //   },
+  // };
 
   const handleStripePay = () => {
     axios
       .post(
-        'http://localhost:4242/create-payment-intent',
-        { stripeId, invoiceTotal }, // Pasa los datos directamente como objeto
+        `${SERVER_LINK}/create-payment-intent`,
+        { stripeId, invoiceTotal },
         {
           headers: {
             'Content-Type': 'application/json',
@@ -56,34 +58,16 @@ const StripePay = ({
         const clientSecret = res.data.clientSecret;
 
         setClientSecret(clientSecret);
-        // Maneja la respuesta del servidor según tus necesidades
-        //   setTransactionId();
-        //   updateInvoice(parserUser.id, invoiceId, {
-        //     status: 'paid',
-        //     metamaskHash: transactionInfo.transactionHash.toString(),
-        //     payDate: new Date(),
-        //   });
-        //   setShowPopUp({
-        //     status: true,
-        //     message: 'Transaction successful',
-        //   });
       })
       .catch((err) => {
         console.log(err);
-        // Maneja los errores aquí
       });
   };
 
   return (
     <>
-      {showPopUp.status && (
-        <PopUpMetamask
-          message={showPopUp.message}
-          transactionHash={transactionId}
-        />
-      )}{' '}
       <Button
-        className="text-base m-2 w-11/12 mb-5 sm:w-36 sm:text-sm"
+        className="text-base m-3 w-11/12 mb-5 sm:w-36 sm:text-sm"
         onClick={handleStripePay}
       >
         <img
@@ -93,17 +77,34 @@ const StripePay = ({
         />
         Pay with Stripe
       </Button>
-      <div className="absolute bg-slate-100 p-4 rounded-sm bottom-20 border">
-        {clientSecret && (
-          <Elements options={options} stripe={stripePromise}>
+
+      {clientSecret && (
+        <div
+          className="absolute bg-slate-100 p-4 rounded-sm bottom-20 border shadow-xl"
+          style={{
+            position: 'absolute',
+            bottom: '50%',
+            left: '50%',
+            transform: 'translate(-50%, +40%)',
+          }}
+        >
+          <Elements
+            options={{
+              clientSecret,
+              appearance: {
+                theme: 'stripe',
+              },
+            }}
+            stripe={stripePromise}
+          >
             <CheckoutForm
               clientSecret={clientSecret}
               invoiceId={invoiceId}
               userId={userId}
             />
           </Elements>
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 };

@@ -50,9 +50,13 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
       cell: ({ row }: { row: any }) => {
         let message;
         let styles;
-        const isPastDue = compareDates(row.original.dueDate);
-        if (isPastDue) {
-          row.original.status = 'past due';
+        const invoiceStatus = row.original.status;
+
+        if (invoiceStatus === 'pending') {
+          const isPastDue = compareDates(row.original.dueDate);
+          if (isPastDue) {
+            row.original.status = 'past due';
+          }
         }
         let formattedPayDateStr;
         if (row.original.payDate) {

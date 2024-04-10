@@ -4,18 +4,29 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
+import { Button } from './ui/button';
 
-export default function CheckoutForm({ clientSecret, invoiceId, userId }) {
+const PROD_LINK = import.meta.env.VITE_PROD_LINK;
+
+interface CheckoutFormProps {
+  clientSecret: string;
+  invoiceId: string;
+  userId: string;
+}
+
+export default function CheckoutForm({
+  clientSecret,
+  invoiceId,
+  userId,
+}: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
 
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentIntentId, setPaymentIntentId] = useState(null);
+  const [paymentIntentId, setPaymentIntentId] = useState('');
 
   useEffect(() => {
-    console.log(invoiceId, userId);
-
     if (!stripe) {
       return;
     }
@@ -28,13 +39,15 @@ export default function CheckoutForm({ clientSecret, invoiceId, userId }) {
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const stripeIntent = stripe
       .retrievePaymentIntent(clientSecret)
       .then(({ paymentIntent }) => {
-        console.log(paymentIntent.id);
-        setPaymentIntentId(paymentIntent.id);
+        if (paymentIntent) {
+          setPaymentIntentId(paymentIntent.id as string);
+        }
 
-        switch (paymentIntent.status) {
+        switch (paymentIntent?.status) {
           case 'succeeded':
             setMessage('Payment succeeded!');
             break;
@@ -44,14 +57,15 @@ export default function CheckoutForm({ clientSecret, invoiceId, userId }) {
           case 'requires_payment_method':
             setMessage('Your payment was not successful, please try again.');
             break;
+
           default:
-            setMessage('Something went wrong.');
+            setMessage('');
             break;
         }
       });
-  }, [stripe]);
+  }, [clientSecret, invoiceId, stripe, userId]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
     if (!stripe || !elements) {
@@ -66,7 +80,7 @@ export default function CheckoutForm({ clientSecret, invoiceId, userId }) {
       elements,
       confirmParams: {
         // Make sure to change this to your payment completion page
-        return_url: `http://localhost/payment_result?&invoice_id=${invoiceId}&user_id=${userId}&payment_id=${paymentIntentId}`,
+        return_url: `${PROD_LINK}/payment_result?&invoice_id=${invoiceId}&user_id=${userId}&payment_id=${paymentIntentId}`,
       },
     });
 
@@ -76,7 +90,7 @@ export default function CheckoutForm({ clientSecret, invoiceId, userId }) {
     // be redirected to an intermediate site first to authorize the payment, then
     // redirected to the `return_url`.
     if (error.type === 'card_error' || error.type === 'validation_error') {
-      setMessage(error.message);
+      setMessage(error.message ?? '');
     } else {
       setMessage('An unexpected error occurred.');
     }
@@ -84,22 +98,29 @@ export default function CheckoutForm({ clientSecret, invoiceId, userId }) {
     setIsLoading(false);
   };
 
-  const paymentElementOptions = {
-    layout: 'tabs',
-  };
+  // const paymentElementOptions = {
+  //   layout: 'tabs',
+  // };
 
   return (
     <form id="payment-form" onSubmit={handleSubmit}>
-      <PaymentElement id="payment-element" options={paymentElementOptions} />
-      <button
-        className="p-2 bg-white border rounded-sm mt-2"
+      <h1 className="mb-2 font-bold text-lg">Stripe payment</h1>
+      <PaymentElement
+        id="payment-element"
+        options={{
+          layout: 'tabs',
+        }}
+      />
+      <Button
+        className="p-2  border rounded-sm mt-2"
         disabled={isLoading || !stripe || !elements}
+        variant="default"
         id="submit"
       >
         <span id="button-text">
           {isLoading ? <div className="spinner" id="spinner"></div> : 'Pay now'}
         </span>
-      </button>
+      </Button>
       {/* Show any error or success messages */}
       {message && <div id="payment-message">{message}</div>}
     </form>

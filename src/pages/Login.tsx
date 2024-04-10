@@ -191,37 +191,39 @@ const Login = () => {
         </CardHeader>
         <CardContent>
           <form>
-            <div className="grid w-full items-center gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  className={classNames('', {
-                    'border-red-500':
-                      errors &&
-                      errors.issues.some((issue) => {
-                        return issue.path[0] === 'email';
-                      }),
-                  })}
-                  id="email"
-                  name="email"
-                  placeholder="Enter your email"
-                  onChange={handleChangeEmail}
-                />
-              </div>
-            </div>
             {loading ? (
               <CardDescription className="text-sm mt-2 ">
-                Verifica tu casilla de mail
+                Check you email inbox{' '}
               </CardDescription>
             ) : (
-              <Button
-                disabled={loading}
-                className="flex mt-2 text-sm font-normal"
-                type="button"
-                onClick={handleSendCode}
-              >
-                Send Code
-              </Button>
+              <>
+                <div className="grid w-full items-center gap-4">
+                  <div className="flex flex-col space-y-1.5">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      className={classNames('', {
+                        'border-red-500':
+                          errors &&
+                          errors.issues.some((issue) => {
+                            return issue.path[0] === 'email';
+                          }),
+                      })}
+                      id="email"
+                      name="email"
+                      placeholder="Enter your email"
+                      onChange={handleChangeEmail}
+                    />
+                  </div>
+                </div>
+                <Button
+                  disabled={loading}
+                  className="flex mt-2 text-sm font-normal"
+                  type="button"
+                  onClick={handleSendCode}
+                >
+                  Send Code
+                </Button>
+              </>
             )}
           </form>
         </CardContent>

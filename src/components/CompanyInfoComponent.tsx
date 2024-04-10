@@ -15,7 +15,7 @@ interface CompanyInfoProps {
   >;
 }
 
-const CompanyInfo = ({
+const CompanyInfoComponent = ({
   editable,
   info,
   setShowForm,
@@ -60,4 +60,4 @@ const CompanyInfo = ({
   );
 };
 
-export default CompanyInfo;
+export default CompanyInfoComponent;

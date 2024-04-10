@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import CompanyInfo from './CompanyInfo';
+import CompanyInfo from './CompanyInfoComponent';
 import { SaveCompanyInfoschema } from '@/Validator';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,7 @@ import { Connections, User } from '@/types';
 import { getUserByEmail, updateUser } from '@/Services';
 import { DiscoverWalletProviders } from './DiscoverWalletProviders';
 import StripeConnection from './StripeConnection';
+import { getAuth, signOut } from 'firebase/auth';
 
 interface WalletConectionProps {
   setConnections: React.Dispatch<
@@ -48,6 +49,7 @@ const WalletConection = ({
   });
   const [errors, setErrors] = useState<ZodError<unknown> | null>(null);
   const [loading, setLoading] = useState(false);
+  const auth = getAuth();
 
   useEffect(() => {
     getUserByEmail(user.email).then((data: User | null) => {
@@ -111,6 +113,17 @@ const WalletConection = ({
         }, 3000);
       }
     }
+  };
+
+  const handleLogOut = () => {
+    signOut(auth)
+      .then(() => {
+        window.sessionStorage.removeItem('user');
+        window.location.href = '/';
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   return (
@@ -200,7 +213,7 @@ const WalletConection = ({
                       />
 
                       <Label className="text-sm" htmlFor="adress">
-                        Adress
+                        Address
                       </Label>
                       <Input
                         className={classNames('text-sm', {
@@ -390,6 +403,7 @@ const WalletConection = ({
               <Button
                 className="flex p-1 text-slate-400 text-sm	"
                 variant="link"
+                onClick={handleLogOut}
               >
                 Log Out
               </Button>

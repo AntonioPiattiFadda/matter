@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getInvoiceById, getUserById } from '@/Services';
-import CompanyInfo from '../components/CompanyInfo';
+import CompanyInfo from '../components/CompanyInfoComponent';
 import { Invoice, User } from '@/types';
 import { formatDate } from '@/utils/FormatDate';
 import classNames from 'classnames';
@@ -29,6 +29,7 @@ const ViewInvoice = () => {
   const { invoiceId, userId } = useParams();
   const [invoice, setInvoice] = useState<Invoice>({
     id: '',
+    serialNumber: 0,
     date: null,
     dueDate: null,
     payDate: null,
@@ -59,7 +60,7 @@ const ViewInvoice = () => {
     companyName: '',
     businessEmail: '',
     adress: '',
-    city: 'ity',
+    city: '',
     state: '',
     country: '',
     zip: '',
@@ -145,7 +146,7 @@ const ViewInvoice = () => {
   }
 
   return (
-    <div className="bg-slate-100 flex flex-col justify-center sm:items-center relative">
+    <div className="bg-slate-100 flex flex-col justify-center sm:items-center ">
       <nav
         className={classNames(
           'bg-black text-white flex justify-center items-center h-10 text-base w-full',
@@ -156,7 +157,7 @@ const ViewInvoice = () => {
       >
         <span className="w-[350px] text-center">
           {invoice.payDate !== null
-            ? `This invoice was paid on ${invoice.dueDate}`
+            ? `This invoice was paid on ${invoice.payDate}`
             : 'This invoice has not been paid.'}
         </span>
       </nav>
@@ -167,7 +168,7 @@ const ViewInvoice = () => {
           style={NoBorderStyle}
         >
           <CardDescription>
-            Inovice{' '}
+            Invoice{' '}
             <span className="font-semibold text-black">{invoice.id}</span>
           </CardDescription>
           <CardDescription className="flex flex-col justify-between sm:flex-row sm:gap-2">

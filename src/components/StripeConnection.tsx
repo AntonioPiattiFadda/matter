@@ -77,13 +77,10 @@ const StripeConnection = ({
     const stripeFetch = axios.post('http://localhost:4242/onboard-user');
     stripeFetch
       .then((res) => {
-        console.log(res.data.url);
-        console.log(res.data.id);
-
-        // window.location.href = res.data.url;
+        window.location.href = res.data.url;
       })
       .catch((err) => {
-        console.log(err); 
+        console.log(err);
       });
   };
 
