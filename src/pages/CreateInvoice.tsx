@@ -48,6 +48,8 @@ const CreateInvoice = () => {
     email: '',
   });
   const [loading, setLoading] = useState(false);
+  const [stripeId, setStripeId] = useState('');
+  const [metamaskAddress, setMetamaskAddress] = useState('');
 
   useEffect(() => {
     const user = sessionStorage.getItem('user');
@@ -58,6 +60,8 @@ const CreateInvoice = () => {
         if (!data) {
           return;
         }
+        setStripeId(data.stripeId || '');
+        setMetamaskAddress(data.metamaskAddress || '');
         setUserCompanyInfo({
           companyName: data.companyName || '',
           businessEmail: data.businessEmail || '',
@@ -113,14 +117,13 @@ const CreateInvoice = () => {
 
   useEffect(() => {
     const subTotal = items.reduce((acc, item) => {
-      return acc + item.amount * item.quantity;
+      return acc + item.price * item.quantity;
     }, 0);
 
     setSubTotal(subTotal);
 
     const total = subTotal + invoiceInfo.shipping - invoiceInfo.discount;
     const totalWithTax = total + total * (invoiceInfo.tax / 100);
-
     setTotal(totalWithTax);
   }, [items, invoiceInfo.tax, invoiceInfo.shipping, invoiceInfo.discount]);
 
@@ -183,7 +186,6 @@ const CreateInvoice = () => {
     index: number
   ) => {
     const { name, value } = e.target;
-    //FIXME - Se deberia de validar que el valor sea un numeros
     if (name === 'price' || name === 'quantity' || name === 'amount') {
       const updatedItems = [...items];
       updatedItems[index] = {
@@ -206,7 +208,6 @@ const CreateInvoice = () => {
   const handleSaveInvoice = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    const metamaskAddress = sessionStorage.getItem('userAccount');
     const invoiceInfoToValidate = {
       ...invoiceInfo,
       items: items,
@@ -215,16 +216,17 @@ const CreateInvoice = () => {
       total: total,
       subTotal: subTotal,
       companyName: userCompanyInfo.companyName,
-      metamaskAddress: metamaskAddress || '',
+      metamaskAddress: metamaskAddress,
+      stripeId: stripeId,
     };
 
     try {
       SaveNewInvoiceInfoSchema.parse(invoiceInfoToValidate);
-      //FIXME - Ver como manejo el userId para mantener la sesion
       createInvoice(
         {
           ...invoiceInfoToValidate,
           metamaskAddress: invoiceInfoToValidate.metamaskAddress || undefined,
+          stripeId: invoiceInfoToValidate.stripeId || undefined,
         },
         user.id
       ).then((res) => {
@@ -540,8 +542,9 @@ const CreateInvoice = () => {
                             type="number"
                             placeholder="amount"
                             name={`amount`}
-                            value={items[index].amount}
+                            value={items[index].price * items[index].quantity}
                             onChange={(e) => handleChangeItems(e, index)}
+                            disabled
                           />{' '}
                         </span>
                       </TableCell>

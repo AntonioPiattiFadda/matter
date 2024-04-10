@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSyncProviders } from '../Hooks/useSyncProviders';
 import { formatAddress } from '@/utils';
 import { CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import Web3 from 'web3';
+import { getUserById, updateUser } from '@/Services';
 
 interface DiscoverWalletProvidersProps {
   connections: {
@@ -18,38 +19,54 @@ interface DiscoverWalletProvidersProps {
       metamask: boolean;
     }>
   >;
+  loading?: boolean;
 }
 
 export const DiscoverWalletProviders = ({
   setConnections,
   connections,
+  loading,
 }: DiscoverWalletProvidersProps) => {
-  const [selectedWallet, setSelectedWallet] = useState<EIP6963ProviderDetail>();
   const [userAccount, setUserAccount] = useState<string>('');
+  const user = window.sessionStorage.getItem('user');
+  const parsedUser = JSON.parse(user as string);
+
+  useEffect(() => {
+    //Controlar si el user tiene un metamask en la base de dataos
+    getUserById(parsedUser.id).then((user) => {
+      if (user?.metamaskAddress) {
+        setUserAccount(user.metamaskAddress);
+        if (setConnections) {
+          setConnections((prevState) => ({ ...prevState, metamask: true }));
+        }
+      }
+    });
+  }, []);
 
   const providers = useSyncProviders();
-  const web3Provider = new Web3(window.ethereum);
 
-  const handleConnect = async (providerWithInfo: EIP6963ProviderDetail) => {
-    const accounts = await providerWithInfo.provider
-      .request({ method: 'eth_requestAccounts' })
-      .catch(console.error);
-
-    if (accounts?.[0]) {
-      setSelectedWallet(providerWithInfo);
-      setUserAccount(accounts?.[0]);
-      window.sessionStorage.setItem('userAccount', accounts?.[0]);
+  const handleConnect = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).ethereum) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (window as any).ethereum.enable(); // Solicita al usuario que permita acceder a su cuenta de MetaMask
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const web3 = new Web3((window as any).ethereum);
+      const myAccounts = await web3.eth.getAccounts();
+      const recipientWallet = myAccounts[0];
+      setUserAccount(recipientWallet);
       if (setConnections) {
         setConnections((prevState) => ({ ...prevState, metamask: true }));
       }
-      console.log(accounts?.[0]);
-      // TODO Guardar la direccion del pag para que el cliente pueda pagar
+
+      updateUser(parsedUser.id, { metamaskAddress: recipientWallet });
+      window.sessionStorage.setItem('userAccount', recipientWallet);
     }
   };
 
   const handleDisconnect = () => {
-    setSelectedWallet(undefined);
     setUserAccount('');
+    updateUser(parsedUser.id, { metamaskAddress: '' });
     window.sessionStorage.removeItem('userAccount');
     if (setConnections) {
       setConnections((prevState) => ({ ...prevState, metamask: false }));
@@ -63,26 +80,40 @@ export const DiscoverWalletProviders = ({
           {' '}
           <div>
             {providers.length > 0 ? (
-              providers?.map((provider: EIP6963ProviderDetail) => (
-                <div key={provider.info.uuid}>
-                  <CardDescription className="text-slate-900	font-semibold text-sm mt-6">
-                    Setup crypto payouts
-                  </CardDescription>
-                  <Button
-                    className="flex mt-3  w-full font-normal	text-sm"
-                    onClick={() => handleConnect(provider)}
-                  >
-                    Connect Metamask Wallet{' '}
-                    <img
-                      className="h-6 translate-y-[.03rem] ml-2"
-                      src="../../public/MetaMaskLogo.png"
-                      alt="Matter Logo"
-                    />{' '}
-                  </Button>
-                </div>
-              ))
+              <div>
+                <CardDescription className="text-slate-900	font-semibold text-sm mt-6">
+                  Setup crypto payouts
+                </CardDescription>
+                <Button
+                  className="flex mt-3  w-full font-normal	text-sm"
+                  onClick={() => handleConnect()}
+                  disabled={loading}
+                >
+                  Connect Metamask Wallet{' '}
+                  <img
+                    className="h-6 translate-y-[.03rem] ml-2"
+                    src="../../public/MetaMaskLogo.png"
+                    alt="Matter Logo"
+                  />{' '}
+                </Button>
+              </div>
             ) : (
-              <div>There are no announced providers.</div>
+              <div>
+                <CardDescription className="text-slate-900	font-semibold text-sm mt-6">
+                  Setup crypto payouts
+                </CardDescription>
+                <Button
+                  className="flex mt-3  w-full font-normal	text-sm"
+                  disabled
+                >
+                  Please Install Metamask{' '}
+                  <img
+                    className="h-6 translate-y-[.03rem] ml-2"
+                    src="../../public/MetaMaskLogo.png"
+                    alt="Matter Logo"
+                  />{' '}
+                </Button>
+              </div>
             )}
           </div>
           <hr />

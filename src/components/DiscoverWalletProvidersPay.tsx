@@ -1,18 +1,25 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { useSyncProviders } from '../Hooks/useSyncProviders';
 import { Button } from './ui/button';
 import Web3 from 'web3';
 import axios from 'axios';
 import PopUpMetamask from './PopUpMetamask';
+import { RegisteredSubscription } from 'web3-eth';
+import { updateInvoice } from '@/Services';
+
+const ETHERSCAN_API_KEY = import.meta.env.VITE_ETHERSCAN_API_KEY;
 
 interface DiscoverWalletProvidersProps {
   recipientWallet: string;
   totalAmount: number;
+  invoiceId: string;
 }
 
 export const DiscoverWalletProvidersPay = ({
   recipientWallet,
   totalAmount,
+  invoiceId,
 }: DiscoverWalletProvidersProps) => {
   const [showPopUp, setShowPopUp] = useState({
     status: false,
@@ -20,32 +27,22 @@ export const DiscoverWalletProvidersPay = ({
   });
   const [transactionHash, setTransactionHash] = useState('');
 
+  const user = window.sessionStorage.getItem('user');
+  const parserUser = JSON.parse(user || '{}');
+
   const providers = useSyncProviders();
-  const web3Provider = new Web3(window.ethereum);
+  
 
-  // const handleConnect = async (providerWithInfo: EIP6963ProviderDetail) => {
-  //   const accounts = await providerWithInfo.provider
-  //     .request({ method: 'eth_requestAccounts' })
-  //     .catch(console.error);
-
-  //   if (accounts?.[0]) {
-  //     setSelectedWallet(providerWithInfo);
-  //     setUserAccount(accounts?.[0]);
-
-  //     // TODO Guardar la direccion del pag para que el cliente pueda pagar
-  //   }
-  // };
-
-  async function convertDollarsToEth(dollars) {
+  async function convertDollarsToEth(dollars: number) {
     const ethPrice = await axios.get(
-      'https://api.etherscan.io/api?module=stats&action=ethprice&apikey=GDPSCFFAMY8AVYDUJ2YDD6NDW51GZUSP35'
+      `https://api.etherscan.io/api?module=stats&action=ethprice&apikey=${ETHERSCAN_API_KEY}`
     );
     const result = ethPrice.data.result.ethusd;
     const ethAmount = dollars / result;
-    return dollars;
+    return ethAmount;
   }
 
-  const showPopUpMessage = (message) => {
+  const showPopUpMessage = (message: string) => {
     setShowPopUp({
       status: true,
       message: message,
@@ -58,12 +55,12 @@ export const DiscoverWalletProvidersPay = ({
     }, 3000);
   };
 
-  async function sendEth(dollars) {
+  async function sendEth(dollars: number) {
     try {
       // Asegúrate de que el navegador del usuario tenga MetaMask instalado.
-      if (window.ethereum) {
-        await window.ethereum.enable(); // Solicita al usuario que permita acceder a su cuenta de MetaMask
-        const web3 = new Web3(window.ethereum);
+      if ((window as any).ethereum) {
+        await (window as any).ethereum.enable(); // Solicita al usuario que permita acceder a su cuenta de MetaMask
+        const web3 = new Web3((window as any).ethereum);
         const myAccounts = await web3.eth.getAccounts();
         const senderWallet = myAccounts[0]; // La dirección del remitente, toma la primera cuenta de MetaMask
 
@@ -80,28 +77,32 @@ export const DiscoverWalletProvidersPay = ({
             to: recipientWallet,
             value: ethAmountInWei,
           });
-          console.log(transactionInfo);
           setTransactionHash(transactionInfo.transactionHash.toString());
-          showPopUpMessage('Transaction successful with hash');
+          updateInvoice(parserUser.id, invoiceId, {
+            status: 'paid',
+            metamaskHash: transactionInfo.transactionHash.toString(),
+            payDate: new Date(),
+          });
+          setShowPopUp({
+            status: true,
+            message: 'Transaction successful',
+          });
           //NOTE - Mostar al usuario transactionInfo.transactionHash y el stauts 1 succes 0 error en un popup
-          // Me trae un success y un hash que le vamos a mostrar al usuario.
-          console.log(
-            `Enviado ${ethAmount} ETH desde ${senderWallet} a ${recipientWallet}`
-          );
+          //FIXME - Boton de ver en el explorador
         } else {
-          showPopUpMessage('Por favor, cambia a la red');
+          showPopUpMessage('Please connect to the Binance Smart Chain network');
         }
       } else {
-        showPopUpMessage('Por favor, instala MetaMask');
+        showPopUpMessage('Please install MetaMask');
       }
     } catch (error) {
-      showPopUpMessage('Error enviando ETH');
+      showPopUpMessage('Error sending transaction');
       console.error(error);
     }
   }
   const NETWORK_ID = '97';
 
-  const checkNetwork = async (web3) => {
+  const checkNetwork = async (web3: Web3<RegisteredSubscription>) => {
     const chainId = await web3.eth.getChainId();
     const isCorrect = chainId.toString() === NETWORK_ID;
     return isCorrect;

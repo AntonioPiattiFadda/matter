@@ -5,6 +5,7 @@ import ProfileEditInfo from './pages/ProfileEditInfo';
 import Dashboard from './pages/Dashboard';
 import CreateInvoice from './pages/CreateInvoice';
 import ViewInvoice from './pages/ViewInvoice';
+import PaymentResult from './components/PaymentResult';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
 
           {/* <Route path="/login" element={<Login />} /> */}
           <Route path="/create-invoice" element={<CreateInvoice />} />
+          <Route path="/payment_result" element={<PaymentResult />} />
           <Route
             path="/view-invoice/:userId/:invoiceId"
             element={<ViewInvoice />}

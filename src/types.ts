@@ -12,6 +12,8 @@ export interface User {
   zip?: string;
   country?: string;
   taxId?: string;
+  metamaskAddress?: string;
+  stripeId?: string;
 }
 
 export interface CreateUser {
@@ -53,6 +55,8 @@ export interface Invoice {
   status: string;
   items?: InvoiceItem[];
   metamaskAddress?: string;
+  stripeId?: string;
+  metamaskHash?: string;
 }
 export interface InvoiceItem {
   description: string;
@@ -81,4 +85,11 @@ export interface UpdateCompanyInfo {
   state?: string;
   tax_id?: string;
   zip?: string;
+}
+
+export interface UpdatePayInvoice {
+  payDate: Date;
+  status: string;
+  metamaskHash?: string;
+  stripeTransactionId?: string;
 }

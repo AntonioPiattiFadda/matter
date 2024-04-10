@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import StripeConectionInfo from './StripeConectionInfo';
 import CompanyInfo from './CompanyInfo';
 import { SaveCompanyInfoschema } from '@/Validator';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import { z, ZodError } from 'zod';
 import { Connections, User } from '@/types';
 import { getUserByEmail, updateUser } from '@/Services';
 import { DiscoverWalletProviders } from './DiscoverWalletProviders';
+import StripeConnection from './StripeConnection';
 
 interface WalletConectionProps {
   setConnections: React.Dispatch<
@@ -112,27 +112,6 @@ const WalletConection = ({
       }
     }
   };
-
-  const handleStripeConnection = () => {
-    setConnections((prevConnections: Connections) => ({
-      ...prevConnections,
-      stripe: true,
-    }));
-  };
-
-  // const handleMetamaskConnection = () => {
-  //   setConnections((prevConnections: Connections) => ({
-  //     ...prevConnections,
-  //     metamask: true,
-  //   }));
-  // };
-  // const handleStripeDisconnection = () => {
-  //   setAllConected(false);
-  // };
-
-  // const handleMetamaskDisconnection = () => {
-  //   setAllConected(false);
-  // };
 
   return (
     <div>
@@ -372,29 +351,14 @@ const WalletConection = ({
             }
             className="flex flex-col justify-end h-screen"
           >
-            {connections.stripe ? (
-              <StripeConectionInfo />
-            ) : (
-              <>
-                <CardDescription className="text-slate-900	font-semibold text-sm mt-6">
-                  Setup card payouts
-                </CardDescription>
-                <Button
-                  className="flex items-center mt-3 mb-3 w-full font-normal text-sm "
-                  onClick={handleStripeConnection}
-                  disabled={loading}
-                >
-                  Connect Stripe
-                  <img
-                    className="h-6 translate-y-[.03rem] ml-2"
-                    src="../../public/stripeLogo.png"
-                    alt="Matter Logo"
-                  />{' '}
-                </Button>
-              </>
-            )}
+            <StripeConnection
+              loading={loading}
+              connections={connections}
+              setConnections={setConnections}
+            />
 
             <DiscoverWalletProviders
+              loading={loading}
               connections={connections}
               setConnections={setConnections}
             />

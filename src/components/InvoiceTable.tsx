@@ -27,8 +27,6 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
   useEffect(() => {
     getUserInvoices(user.id || '').then((data) => {
       const mappedInvoices = data.map((invoice) => {
-        console.log(invoice);
-
         return {
           id: invoice.id,
           status: invoice.status,

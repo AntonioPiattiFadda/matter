@@ -16,6 +16,8 @@ import { Invoice, User } from '@/types';
 import { formatDate } from '@/utils/FormatDate';
 import classNames from 'classnames';
 import { DiscoverWalletProvidersPay } from '@/components/DiscoverWalletProvidersPay';
+import StripePay from '@/components/StripePay';
+import Loader from '@/components/Loader';
 
 const NoBorderStyle = {
   borderTop: 'none',
@@ -43,6 +45,7 @@ const ViewInvoice = () => {
     terms: '',
     status: '',
     metamaskAddress: '',
+    stripeId: '',
   });
   const [invoiceItems, setInvoiceItems] = useState([
     {
@@ -73,6 +76,7 @@ const ViewInvoice = () => {
     taxId: '',
   });
   const [coppied, setCoppied] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (invoiceId) {
@@ -101,6 +105,7 @@ const ViewInvoice = () => {
           setInvoice((data as unknown as Invoice) || null);
           setInvoiceItems(data?.items || []);
 
+          setLoading(false);
           return;
         }
       );
@@ -131,8 +136,12 @@ const ViewInvoice = () => {
     }, 3000);
   };
 
-  if (!invoice) {
-    return <div>No hay invoice</div>;
+  if (loading) {
+    return (
+      <>
+        <Loader />
+      </>
+    );
   }
 
   return (
@@ -305,23 +314,15 @@ const ViewInvoice = () => {
               <DiscoverWalletProvidersPay
                 recipientWallet={invoice.metamaskAddress || ''}
                 totalAmount={invoice.total}
+                invoiceId={invoice.id || ''}
               />
-              {/* <Button className="text-base m-2 w-11/12 mb-5 sm:w-36 sm:text-sm">
-              <img
-                className="h-7 mr-2"
-                src="../../public/ETHLogo.png"
-                alt="eth icon"
+
+              <StripePay
+                stripeId={invoice.stripeId ?? ''}
+                invoiceTotal={invoice.total}
+                invoiceId={invoice.id || ''}
+                userId={userId || ''}
               />
-              Pay with ETH
-            </Button> */}
-              <Button className="text-base m-2 w-11/12 mb-5 sm:w-36 sm:text-sm">
-                <img
-                  className="h-7 mr-2"
-                  src="../../public/WalletLogo.png"
-                  alt="wallet icon"
-                />
-                Pay with Stripe
-              </Button>
             </div>
             <CardDescription className="flex gap-2 items-center mb-5 col-start-1 row-start-1 sm:translate-y-[1.2rem]">
               Powered by

@@ -1,5 +1,11 @@
 import { db } from '@/../firebaseConfig';
-import { CreateUser, Invoice, UpdateCompanyInfo, User } from '@/types';
+import {
+  CreateUser,
+  Invoice,
+  UpdateCompanyInfo,
+  UpdatePayInvoice,
+  User,
+} from '@/types';
 import {
   collection,
   query,
@@ -81,8 +87,6 @@ export const updateUser = async (
   updateData: UpdateCompanyInfo & { [x: string]: any }
 ) => {
   try {
-    console.log(userId);
-
     const userDocRef = doc(db, 'users', userId);
 
     await updateDoc(userDocRef, updateData);
@@ -173,5 +177,29 @@ export const createInvoice = async (invoiceData: Invoice, userId: string) => {
   } catch (error) {
     console.error('Error al crear la factura: ', error);
     throw new Error('No se pudo crear la factura');
+  }
+};
+
+export const updateInvoice = async (
+  userId: string,
+  invoiceId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  invoiceData: UpdatePayInvoice & { [x: string]: any }
+) => {
+  try {
+    const userDocRef = doc(db, 'users', userId);
+
+    const invoiceCollectionRef = collection(userDocRef, 'invoices');
+
+    const invoiceDocRef = doc(invoiceCollectionRef, invoiceId);
+
+    await updateDoc(invoiceDocRef, invoiceData);
+
+    console.log('Factura actualizada con ID: ', invoiceId);
+
+    return true;
+  } catch (error) {
+    console.error('Error al actualizar el invoice: ', error);
+    throw new Error('No se pudo actualizar el invoice');
   }
 };

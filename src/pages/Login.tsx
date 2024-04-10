@@ -78,12 +78,10 @@ const Login = () => {
   const validateSingInWithEmailLink = () => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = window.localStorage.getItem('emailForSignIn');
-
       if (!email) {
         email =
           window.prompt('Please provide your email for confirmation') ?? '';
       }
-
       signInWithEmailLink(auth, email, window.location.href)
         .then((result) => {
           window.localStorage.removeItem('emailForSignIn');
@@ -94,7 +92,6 @@ const Login = () => {
           window.sessionStorage.setItem('user', JSON.stringify(user));
 
           createUser({ email: user.email }, user.id).then(() => {
-            alert('Conexion exitosa');
             window.location.href = '/dashboard';
           });
         })

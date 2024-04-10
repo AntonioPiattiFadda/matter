@@ -24,7 +24,6 @@ export const SaveNewInvoiceInfoSchema = z.object({
         description: z.string().min(1),
         price: z.number().min(1),
         quantity: z.number().min(1),
-        amount: z.number().min(1),
       })
     )
     .min(1),
@@ -34,6 +33,7 @@ export const SaveNewInvoiceInfoSchema = z.object({
   notes: z.string(),
   terms: z.string(),
   metamaskAddress: z.string(),
+  stripeId: z.string(),
 });
 
 // eslint-disable-next-line react-refresh/only-export-components
