@@ -40,29 +40,27 @@ export default function CheckoutForm({
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const stripeIntent = stripe
-      .retrievePaymentIntent(clientSecret)
-      .then(({ paymentIntent }) => {
-        if (paymentIntent) {
-          setPaymentIntentId(paymentIntent.id as string);
-        }
+    stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
+      if (paymentIntent) {
+        setPaymentIntentId(paymentIntent.id as string);
+      }
 
-        switch (paymentIntent?.status) {
-          case 'succeeded':
-            setMessage('Payment succeeded!');
-            break;
-          case 'processing':
-            setMessage('Your payment is processing.');
-            break;
-          case 'requires_payment_method':
-            setMessage('Your payment was not successful, please try again.');
-            break;
+      switch (paymentIntent?.status) {
+        case 'succeeded':
+          setMessage('Payment succeeded!');
+          break;
+        case 'processing':
+          setMessage('Your payment is processing.');
+          break;
+        case 'requires_payment_method':
+          setMessage('Your payment was not successful, please try again.');
+          break;
 
-          default:
-            setMessage('');
-            break;
-        }
-      });
+        default:
+          setMessage('');
+          break;
+      }
+    });
   }, [clientSecret, invoiceId, stripe, userId]);
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {

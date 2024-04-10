@@ -196,7 +196,6 @@ const CreateInvoice = () => {
   ) => {
     const { name, value } = e.target;
 
-    //FIXME - Convertir a value el valor final
     if (name === 'price' || name === 'quantity' || name === 'amount') {
       const updatedItems = [...items];
       updatedItems[index] = {
@@ -480,7 +479,7 @@ const CreateInvoice = () => {
               <TableBody>
                 {items.map((item, index) => {
                   return (
-                    <TableRow key={index}>
+                    <TableRow key={item.description}>
                       <TableCell>
                         {' '}
                         <Input
