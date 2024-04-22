@@ -18,7 +18,8 @@ import classNames from 'classnames';
 import { DiscoverWalletProvidersPay } from '@/components/DiscoverWalletProvidersPay';
 import StripePay from '@/components/StripePay';
 import Loader from '@/components/Loader';
-
+import MatterAlt from '../assets/MatterAlt.png';
+import CopyIcon from '../assets/CopyIcon.svg';
 const NoBorderStyle = {
   borderTop: 'none',
   borderLeft: 'none',
@@ -29,7 +30,7 @@ const ViewInvoice = () => {
   const { invoiceId, userId } = useParams();
   const [invoice, setInvoice] = useState<Invoice>({
     id: '',
-    serialNumber: 0,
+    serialNumber: '',
     date: null,
     dueDate: null,
     payDate: null,
@@ -129,7 +130,7 @@ const ViewInvoice = () => {
   }, [userId, invoice, invoiceId]);
 
   const handleCopy = () => {
-    const url = `http://localhost/view-invoice/${userId}/${invoice.id}`;
+    const url = `https://matterinvoice.app/view-invoice/${userId}/${invoice.id}`;
     navigator.clipboard.writeText(url);
     setCoppied(true);
     setTimeout(() => {
@@ -167,20 +168,22 @@ const ViewInvoice = () => {
           className="border flex justify-between items-center w-full h-full p-3"
           style={NoBorderStyle}
         >
-          <CardDescription>
+          <CardDescription className="text-xs">
             Invoice{' '}
-            <span className="font-semibold text-black">{invoice.id}</span>
+            <span className="font-semibold text-black text-sm">
+              {invoice.serialNumber}
+            </span>
           </CardDescription>
           <CardDescription className="flex flex-col justify-between sm:flex-row sm:gap-2">
-            <p>
+            <p className="text-xs">
               Issued{' '}
-              <span className="font-semibold text-black">
+              <span className="font-semibold text-black text-sm">
                 {String(invoice.date)}
               </span>
             </p>
-            <p>
+            <p className="text-xs">
               Due Date{' '}
-              <span className="font-semibold text-black">
+              <span className="font-semibold text-black text-sm">
                 {' '}
                 {String(invoice.dueDate)}
               </span>
@@ -189,13 +192,13 @@ const ViewInvoice = () => {
         </CardContent>
         <div className="flex flex-col sm:flex-row">
           <CardContent className="flex flex-col  h-[210px] w-full p-3 ">
-            <CardDescription className="text-slate-500 text-sm font-semibold mb-2">
+            <CardDescription className="text-slate-500 text-xs font-semibold mb-2">
               From
             </CardDescription>
             <CompanyInfo editable={false} info={userCompanyInfo} />
           </CardContent>
           <CardContent className="flex flex-col  h-[210px] w-full p-3 border border-y-0 border-l-1 border-r-0">
-            <CardDescription className="text-slate-500 text-sm font-semibold mb-2">
+            <CardDescription className="text-slate-500 text-xs font-semibold mb-2">
               To
             </CardDescription>
             <CompanyInfo editable={false} info={toCompanyInfo} />
@@ -208,14 +211,16 @@ const ViewInvoice = () => {
           <Table className="w-full p-0">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px] border border-r-0">
+                <TableHead className="w-[100px] border border-r-0 text-xs">
                   Description
                 </TableHead>
-                <TableHead className="text-end border border-l-0">
+                <TableHead className="text-end border border-l-0 text-xs">
                   QTY
                 </TableHead>
-                <TableHead className="text-end border">Price</TableHead>
-                <TableHead className="text-end border">Amount</TableHead>
+                <TableHead className="text-end border text-xs">Price</TableHead>
+                <TableHead className="text-end border text-xs">
+                  Amount
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -286,11 +291,11 @@ const ViewInvoice = () => {
           className="border flex flex-col justify-between  w-full h-full p-3"
           style={NoBorderStyle}
         >
-          <CardDescription className="flex flex-col justify-between ">
+          <CardDescription className="flex flex-col justify-between text-xs">
             Notes
           </CardDescription>
-          <CardDescription className="flex flex-col justify-between text-black ">
-            Lorem ipsum dolor esit amit
+          <CardDescription className="flex flex-col justify-between text-black text-xs">
+            {invoice.notes}
           </CardDescription>
         </CardContent>
 
@@ -302,7 +307,7 @@ const ViewInvoice = () => {
             Terms
           </CardDescription>
           <CardDescription className="flex flex-col justify-between text-black ">
-            Lorem ipsum dolor esit amit
+            {invoice.terms}
           </CardDescription>
         </CardContent>
 
@@ -312,24 +317,31 @@ const ViewInvoice = () => {
               Pay with crypto or card.
             </CardDescription>
             <div className=" sm:flex col-start-2 sm:w-[420px] justify-end">
-              <DiscoverWalletProvidersPay
-                recipientWallet={invoice.metamaskAddress || ''}
-                totalAmount={invoice.total}
-                invoiceId={invoice.id || ''}
-              />
-
-              <StripePay
-                stripeId={invoice.stripeId ?? ''}
-                invoiceTotal={invoice.total}
-                invoiceId={invoice.id || ''}
-                userId={userId || ''}
-              />
+              {invoice.metamaskAddress && (
+                <DiscoverWalletProvidersPay
+                  recipientWallet={invoice.metamaskAddress || ''}
+                  totalAmount={invoice.total}
+                  invoiceId={invoice.id || ''}
+                  userId={userId || ''}
+                  serialNumber={invoice.serialNumber}
+                />
+              )}
+              {invoice.stripeId && (
+                <StripePay
+                  stripeId={invoice.stripeId ?? ''}
+                  invoiceTotal={invoice.total}
+                  companyName={userCompanyInfo.companyName}
+                  invoiceId={invoice.id || ''}
+                  userId={userId || ''}
+                  serialNumber={invoice.serialNumber}
+                />
+              )}
             </div>
             <CardDescription className="flex gap-2 items-center mb-5 col-start-1 row-start-1 sm:translate-y-[1.2rem]">
               Powered by
               <img
                 className="h-5 translate-y-[-.05rem]"
-                src="../../public/MatterAlt.png"
+                src={MatterAlt}
                 alt="matter logo"
               />
             </CardDescription>
@@ -341,11 +353,7 @@ const ViewInvoice = () => {
         onClick={handleCopy}
         disabled={coppied}
       >
-        <img
-          className="h-5 mr-2"
-          src="../../public/CopyIcon.png"
-          alt="copy icon"
-        />
+        <img className="h-5 mr-2" src={CopyIcon} alt="copy icon" />
         {coppied ? 'Link Copied!' : '  Copy Share Link'}{' '}
       </Button>
       <div className="bg-slate-100 h-52"></div>

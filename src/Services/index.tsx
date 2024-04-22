@@ -16,6 +16,7 @@ import {
   updateDoc,
   getDoc,
   setDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 
 export const getUserByEmail = async (email: string) => {
@@ -72,11 +73,8 @@ export const createUser = async (userData: CreateUser, userId: string) => {
 
     await setDoc(userRef, userData); // Utilizar setDoc en lugar de addDoc
 
-    console.log('Usuario creado con ID: ', userId);
-
     return userId;
   } catch (error) {
-    console.error('Error al crear el usuario: ', error);
     throw new Error('No se pudo crear el usuario');
   }
 };
@@ -90,8 +88,6 @@ export const updateUser = async (
     const userDocRef = doc(db, 'users', userId);
 
     await updateDoc(userDocRef, updateData);
-
-    console.log('Usuario actualizado con éxito');
 
     return true;
   } catch (error) {
@@ -109,6 +105,7 @@ export const getUserInvoices = async (userId: string) => {
     const snapshot = await getDocs(invoiceCollectionRef);
 
     const invoices: {
+      serialNumber: number;
       payDate: Date | null;
       status: string;
       companyName: string;
@@ -120,6 +117,7 @@ export const getUserInvoices = async (userId: string) => {
 
     snapshot.forEach((doc) => {
       return invoices.push({
+        serialNumber: 0,
         status: '',
         companyName: '',
         toCompanyName: '',
@@ -171,12 +169,25 @@ export const createInvoice = async (invoiceData: Invoice, userId: string) => {
 
     const newInvoiceRef = await addDoc(invoiceCollectionRef, invoiceData);
 
-    console.log('Factura creada con ID: ', newInvoiceRef.id);
-
     return newInvoiceRef.id;
   } catch (error) {
     console.error('Error al crear la factura: ', error);
     throw new Error('No se pudo crear la factura');
+  }
+};
+export const deleteInvoice = async (userId: string, invoiceId: string) => {
+  try {
+    const userDocRef = doc(db, 'users', userId);
+
+    const invoiceCollectionRef = collection(userDocRef, 'invoices');
+
+    const invoiceDocRef = doc(invoiceCollectionRef, invoiceId);
+
+    await deleteDoc(invoiceDocRef);
+    return invoiceId;
+  } catch (error) {
+    console.error('Error al eliminar la factura: ', error);
+    throw new Error('No se pudo eliminar la factura');
   }
 };
 
@@ -194,8 +205,6 @@ export const updateInvoice = async (
     const invoiceDocRef = doc(invoiceCollectionRef, invoiceId);
 
     await updateDoc(invoiceDocRef, invoiceData);
-
-    console.log('Factura actualizada con ID: ', invoiceId);
 
     return true;
   } catch (error) {

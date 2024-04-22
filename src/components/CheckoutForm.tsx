@@ -12,12 +12,14 @@ interface CheckoutFormProps {
   clientSecret: string;
   invoiceId: string;
   userId: string;
+  serialNumber?: string;
 }
 
 export default function CheckoutForm({
   clientSecret,
   invoiceId,
   userId,
+  serialNumber,
 }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -44,22 +46,6 @@ export default function CheckoutForm({
       if (paymentIntent) {
         setPaymentIntentId(paymentIntent.id as string);
       }
-
-      switch (paymentIntent?.status) {
-        case 'succeeded':
-          setMessage('Payment succeeded!');
-          break;
-        case 'processing':
-          setMessage('Your payment is processing.');
-          break;
-        case 'requires_payment_method':
-          setMessage('Your payment was not successful, please try again.');
-          break;
-
-        default:
-          setMessage('');
-          break;
-      }
     });
   }, [clientSecret, invoiceId, stripe, userId]);
 
@@ -78,7 +64,7 @@ export default function CheckoutForm({
       elements,
       confirmParams: {
         // Make sure to change this to your payment completion page
-        return_url: `${PROD_LINK}/payment_result?&invoice_id=${invoiceId}&user_id=${userId}&payment_id=${paymentIntentId}`,
+        return_url: `${PROD_LINK}/payment_result?&invoice_id=${invoiceId}&user_id=${userId}&payment_id=${paymentIntentId}&serial_number=${serialNumber}`,
       },
     });
 

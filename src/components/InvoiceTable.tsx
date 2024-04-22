@@ -8,38 +8,63 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useEffect, useState } from 'react';
 import { DataTable } from './DataTable';
 import { Link } from 'react-router-dom';
-import { getUserInvoices } from '@/Services';
 import { Connections, User, UserInvoices } from '@/types';
 import { compareDates } from '@/utils/CompareDates';
 import { formatDate } from '@/utils/FormatDate';
+import CompleteAccountFirst from '../assets/CompleteAccountFirst.png';
+import AddIcon from '../assets/AddIcon.svg';
+import FirstInvoice from '../assets/FirstInvoice.png';
+import React, { useState } from 'react';
+import { deleteInvoice } from '@/Services';
+import DeleteInvoiceModal from './DeleteInvoiceModal';
+import DeteleIncon from '../assets/DeleteIcon.svg';
 
 interface InvoiceTableProps {
   user: User;
   connections: Connections;
+  invoices: UserInvoices[];
+  setInvoices: React.Dispatch<React.SetStateAction<UserInvoices[]>>;
 }
 
-const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
-  const [invoices, setInvoices] = useState<UserInvoices[]>([]);
+const InvoiceTable = ({
+  user,
+  connections,
+  invoices,
+  setInvoices,
+}: InvoiceTableProps) => {
+  const userSession = window.sessionStorage.getItem('user');
+  const parsedUser = JSON.parse(userSession as unknown as string);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [invoiceToDeleteId, setInvoiceToDeleteId] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    getUserInvoices(user.id || '').then((data) => {
-      const mappedInvoices = data.map((invoice) => {
-        return {
-          id: invoice.id,
-          status: invoice.status,
-          from: invoice.companyName,
-          to: invoice.toCompanyName,
-          amount: invoice.total,
-          dueDate: invoice.dueDate,
-          payDate: invoice.payDate,
-        };
+  const handleShowModal = (id: string) => {
+    setInvoiceToDeleteId(id);
+    setShowDeleteModal(true);
+  };
+
+  const cancelShowModal = () => {
+    setInvoiceToDeleteId('');
+    setShowDeleteModal(false);
+  };
+
+  const handleDelete = () => {
+    setLoading(true);
+    deleteInvoice(parsedUser.id, invoiceToDeleteId)
+      .then(() => {
+        const updatedInvoices = invoices.filter(
+          (invoice) => invoice.id !== invoiceToDeleteId
+        );
+        setInvoices(updatedInvoices);
+        setShowDeleteModal(false);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error al eliminar la factura:', error);
       });
-      setInvoices(mappedInvoices);
-    });
-  }, [user.id]);
+  };
 
   const columns = [
     {
@@ -91,7 +116,7 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
       cell: ({ row }: { row: any }) => {
         return (
           <div className="font-medium text-base p-2 pl-4">
-            {row.original.id}
+            {row.original.serialNumber}
           </div>
         );
       },
@@ -138,14 +163,38 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
       cell: ({ row }: { row: any }) => {
         return (
           <div className="text-right font-medium text-sky-600 p-2 pr-4 text-base">
-            <Link to={`/view-invoice/${user.id}/${row.original.id}`}>View</Link>
+            <a
+              href={`/view-invoice/${user.id}/${row.original.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View
+            </a>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'link',
+      header: () => <div className="text-right"></div>,
+      cell: ({ row }: { row: any }) => {
+        return (
+          <div className="text-right font-medium text-sky-600 text-base grid content-center pl-1 cursor-pointer">
+            <img
+              className="h-5"
+              onClick={() => handleShowModal(row.original.id)}
+              src={DeteleIncon}
+              alt="minus icon"
+            />
           </div>
         );
       },
     },
   ];
 
-  if (!connections.userInfo || !connections.stripe || !connections.metamask) {
+  const walletConnections = connections.stripe || connections.metamask;
+
+  if (!connections.userInfo || !walletConnections) {
     return (
       <div className="hidden  sm:grid place-content-center w-screen h-screen  bg-slate-50 ">
         <Card className="w-[500px] rounded-2xl">
@@ -153,29 +202,28 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
             <CardTitle>
               {' '}
               <img
-                className="flex h-48 ml-2"
-                src="../../public/CompleteAccountFirst.png"
+                className="flex h-[300px] ml-2"
+                src={CompleteAccountFirst}
                 alt="Drop image"
               />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <CardDescription className="text-slate-900 font-bold text-xl">
+            <CardDescription className="text-slate-900 font-bold text-lg">
               {' '}
-              First, complete your account.{' '}
+              Hey! It’s time to add your biz details.
             </CardDescription>
           </CardContent>
           <CardFooter>
-            <CardDescription className="text-slate-500 text-base font-medium">
-              To send invoices add your company details, connect stripe and
-              MetaMask.
+            <CardDescription className="text-slate-500 text-base ">
+              Add your company details and connect Stripe or MetaMask. You can
+              connect one or both.
             </CardDescription>
           </CardFooter>
         </Card>
       </div>
     );
   }
-
   if (invoices.length === 0) {
     return (
       <div className="hidden  sm:grid place-content-center w-screen h-screen  bg-slate-50">
@@ -184,8 +232,8 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
             <CardTitle>
               {' '}
               <img
-                className="flex h-48 ml-2"
-                src="../../public/CompleteAccountFirst.png"
+                className="flex h-[300px] ml-2"
+                src={FirstInvoice}
                 alt="Drop image"
               />
             </CardTitle>
@@ -193,20 +241,16 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
           <CardContent>
             <CardDescription className="text-slate-900 font-bold text-xl">
               {' '}
-              Let’s make your first invoice!{' '}
+              Good work, let’s try making your first invoice.{' '}
             </CardDescription>
-            <CardDescription className="text-slate-500 text-base font-sm">
-              Create your first invoice, once you do you’ll see them here.
+            <CardDescription className="text-slate-500 text-sm font-sm mt-2">
+              Create your first invoice, once you do you’ll see those here.{' '}
             </CardDescription>
           </CardContent>
           <CardFooter>
             <Button>
               <Link className="flex" to={'/create-invoice'}>
-                <img
-                  className="h-4 mr-1"
-                  src="../../public/AddIcon.png"
-                  alt="add icon"
-                />
+                <img className="h-4 mr-1" src={AddIcon} alt="add icon" />
                 Create New
               </Link>
             </Button>
@@ -218,7 +262,14 @@ const InvoiceTable = ({ user, connections }: InvoiceTableProps) => {
 
   return (
     <div className="hidden  sm:flex flex-col w-full bg-white rounded-lg shadow-md">
-      <DataTable columns={columns} data={invoices} />
+      {showDeleteModal && (
+        <DeleteInvoiceModal
+          loading={loading}
+          handleDelete={handleDelete}
+          cancelShowModal={cancelShowModal}
+        />
+      )}
+      <DataTable columns={columns} data={invoices} setInvoices={setInvoices} />
     </div>
   );
 };

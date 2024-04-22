@@ -21,6 +21,7 @@ export interface CreateUser {
 }
 
 export interface UserInvoices {
+  serialNumber: number;
   status: string;
   id: string;
   from: string;
@@ -38,7 +39,7 @@ export interface Connections {
 
 export interface Invoice {
   id?: string;
-  serialNumber: number;
+  serialNumber: string;
   date: Date | null | Timestamp | string;
   dueDate: Date | null | Timestamp | string;
   payDate: Date | null | Timestamp | string;
@@ -93,4 +94,20 @@ export interface UpdatePayInvoice {
   status: string;
   metamaskHash?: string;
   stripeTransactionId?: string;
+}
+
+export interface ConfettiConfig {
+  angle?: number;
+  spread?: number;
+  width?: string;
+  height?: string;
+  duration?: number;
+  dragFriction?: number;
+  stagger?: number;
+  startVelocity?: number;
+  elementCount?: number;
+  decay?: number;
+  colors?: string[];
+  random?: () => number;
+  perspective?: string;
 }

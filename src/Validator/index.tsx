@@ -13,7 +13,7 @@ export const SaveCompanyInfoschema = z.object({
 
 export const SaveNewInvoiceInfoSchema = z.object({
   id: z.string(),
-  serialNumber: z.number().min(1),
+  serialNumber: z.string(),
   date: z.date(),
   dueDate: z.date(),
   toCompanyName: z.string().min(1),
@@ -34,8 +34,8 @@ export const SaveNewInvoiceInfoSchema = z.object({
   total: z.number(),
   notes: z.string(),
   terms: z.string(),
-  metamaskAddress: z.string(),
-  stripeId: z.string(),
+  metamaskAddress: z.string().optional(),
+  stripeId: z.string().optional(),
 });
 
 // eslint-disable-next-line react-refresh/only-export-components

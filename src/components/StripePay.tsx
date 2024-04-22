@@ -5,14 +5,17 @@ import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from './CheckoutForm';
-
+import WalletLogo from '../assets/WalletLogo.svg';
 const SERVER_LINK = import.meta.env.VITE_STRIPE_SERVER_LINK;
 
 interface StripePayProps {
   stripeId: string;
   invoiceTotal: number;
+  companyName: string;
   invoiceId: string;
   userId: string;
+  setLoading?: (loading: boolean) => void;
+  serialNumber?: string;
 }
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_SECRET_KEY || '', {
@@ -22,11 +25,12 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_SECRET_KEY || '', {
 const StripePay = ({
   stripeId,
   invoiceTotal,
+  companyName,
   invoiceId,
   userId,
+  serialNumber,
 }: StripePayProps) => {
   const [clientSecret, setClientSecret] = useState('');
-  console.log(SERVER_LINK);
 
   // const appearance = {
   //   theme: 'stripe',
@@ -47,7 +51,7 @@ const StripePay = ({
     axios
       .post(
         `${SERVER_LINK}/create-payment-intent`,
-        { stripeId, invoiceTotal },
+        { stripeId, invoiceTotal, companyName },
         {
           headers: {
             'Content-Type': 'application/json',
@@ -70,12 +74,8 @@ const StripePay = ({
         className="text-base m-3 w-11/12 mb-5 sm:w-36 sm:text-sm"
         onClick={handleStripePay}
       >
-        <img
-          className="h-7 mr-2"
-          src="../../public/WalletLogo.png"
-          alt="wallet icon"
-        />
-        Pay with Stripe
+        <img className="h-5 mr-2" src={WalletLogo} alt="wallet icon" />
+        Pay with Card
       </Button>
 
       {clientSecret && (
@@ -101,6 +101,7 @@ const StripePay = ({
               clientSecret={clientSecret}
               invoiceId={invoiceId}
               userId={userId}
+              serialNumber={serialNumber}
             />
           </Elements>
         </div>

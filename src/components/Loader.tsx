@@ -1,4 +1,4 @@
-import './Loader.css'; // Importa el archivo CSS donde definirás la animación
+import './Loader.css';
 
 const Loader = () => {
   return (

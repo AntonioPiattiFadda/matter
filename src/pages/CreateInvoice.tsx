@@ -25,6 +25,11 @@ import classNames from 'classnames';
 import { Invoice, InvoiceItem, User } from '@/types';
 import { createInvoice, getUserByEmail } from '@/Services';
 import CompanyInfo from '../components/CompanyInfoComponent';
+import InvoiceCreater from '../assets/InvoiceCreated.png';
+import AddItem from '../assets/AddItem.png';
+import DeleteItem from '../assets/DeleteItem.png';
+import CopyBlackIcon from '../assets/CopyBlackIcon.svg';
+import AppConfetti from '@/components/confetti/AppConfetti';
 
 const NoBorderStyle = {
   borderTop: 'none',
@@ -52,33 +57,35 @@ const CreateInvoice = () => {
   const [metamaskAddress, setMetamaskAddress] = useState('');
 
   useEffect(() => {
-    const user = sessionStorage.getItem('user');
-    if (user) {
-      const parsedUser = JSON.parse(user);
-      setUser(parsedUser);
-      getUserByEmail(parsedUser.email).then((data: User | null) => {
-        if (!data) {
-          return;
-        }
-        setStripeId(data.stripeId || '');
-        setMetamaskAddress(data.metamaskAddress || '');
-        setUserCompanyInfo({
-          companyName: data.companyName || '',
-          businessEmail: data.businessEmail || '',
-          adress: data.adress || '',
-          city: data.city || '',
-          state: data.state || '',
-          zip: data.zip || '',
-          country: data.country || '',
-          taxId: data.taxId || '',
+    if (user.id == '') {
+      const user = sessionStorage.getItem('user');
+      if (user) {
+        const parsedUser = JSON.parse(user);
+        setUser(parsedUser);
+        getUserByEmail(parsedUser.email).then((data: User | null) => {
+          if (!data) {
+            return;
+          }
+          setStripeId(data.stripeId || '');
+          setMetamaskAddress(data.metamaskAddress || '');
+          setUserCompanyInfo({
+            companyName: data.companyName || '',
+            businessEmail: data.businessEmail || '',
+            adress: data.adress || '',
+            city: data.city || '',
+            state: data.state || '',
+            zip: data.zip || '',
+            country: data.country || '',
+            taxId: data.taxId || '',
+          });
         });
-      });
+      }
     }
-  }, []);
+  }, [user]);
 
   const [invoiceInfo, setInvoiceInfo] = useState<Invoice>({
     id: '',
-    serialNumber: 0,
+    serialNumber: '',
     date: null,
     dueDate: null,
     toCompanyName: '',
@@ -155,24 +162,22 @@ const CreateInvoice = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
     if (name === 'serialNumber') {
+      if (/[a-zA-Z]/.test(value)) {
+        return;
+      }
+
       setInvoiceInfo({
         ...invoiceInfo,
-        [name]: parseInt(value),
+        [name]: value,
       });
       return;
     }
     if (name === 'tax' || name === 'shipping' || name === 'discount') {
-      if (!parseInt(value)) {
-        setInvoiceInfo({
-          ...invoiceInfo,
-          [name]: 0,
-        });
-        return;
-      }
       setInvoiceInfo({
         ...invoiceInfo,
-        [name]: parseInt(value),
+        [name]: Number(value),
       });
       return;
     }
@@ -183,6 +188,7 @@ const CreateInvoice = () => {
       });
       return;
     }
+    console.log('Tmb estoy aca');
 
     setInvoiceInfo({
       ...invoiceInfo,
@@ -200,7 +206,7 @@ const CreateInvoice = () => {
       const updatedItems = [...items];
       updatedItems[index] = {
         ...updatedItems[index],
-        [name]: parseFloat(value),
+        [name]: Number(value),
       };
 
       setItems(updatedItems);
@@ -219,6 +225,7 @@ const CreateInvoice = () => {
   const handleSaveInvoice = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+
     const invoiceInfoToValidate = {
       ...invoiceInfo,
       items: items,
@@ -236,8 +243,8 @@ const CreateInvoice = () => {
       createInvoice(
         {
           ...invoiceInfoToValidate,
-          metamaskAddress: invoiceInfoToValidate.metamaskAddress || undefined,
-          stripeId: invoiceInfoToValidate.stripeId || undefined,
+          metamaskAddress: invoiceInfoToValidate?.metamaskAddress,
+          stripeId: invoiceInfoToValidate?.stripeId,
         },
         user.id
       ).then((res) => {
@@ -262,7 +269,7 @@ const CreateInvoice = () => {
   };
 
   const handleCopy = () => {
-    const url = `http://localhost/view-invoice/${user.id}/${successCreation.id}`;
+    const url = `https://matterinvoice.app/view-invoice/${user.id}/${successCreation.id}`;
     navigator.clipboard.writeText(url);
     setSuccessCreation({
       ...successCreation,
@@ -280,13 +287,14 @@ const CreateInvoice = () => {
     return (
       <div className="hidden  sm:grid place-content-center w-screen h-screen  bg-slate-50">
         <Card className="w-[500px] rounded-2xl flex flex-col items-center">
+          <AppConfetti />
           <CardHeader>
             <CardTitle>
               {' '}
               <img
                 className="flex h-48 ml-2"
-                src="../../public/DiamondIcon.png"
-                alt="Diamond image"
+                src={InvoiceCreater}
+                alt="invoice creator icon"
               />
             </CardTitle>
           </CardHeader>
@@ -301,11 +309,7 @@ const CreateInvoice = () => {
           </CardContent>
           <CardFooter className="flex gap-2">
             <Button onClick={handleCopy}>
-              <img
-                className="h-6 mr-1"
-                src="../../public/CopyBlackIcon.png"
-                alt="add icon"
-              />
+              <img className="h-5 mr-1" src={CopyBlackIcon} alt="add icon" />
               {successCreation.copied ? 'Link Copied!' : 'Copy Invoice Link'}
             </Button>
             <Button
@@ -333,7 +337,7 @@ const CreateInvoice = () => {
             style={NoBorderStyle}
           >
             <CardDescription className="flex items-center gap-2">
-              <Label className="text-slate-500 text-sm font-semibold">
+              <Label className="text-slate-500 text-xs font-semibold">
                 Invoice
               </Label>
               <Input
@@ -347,12 +351,14 @@ const CreateInvoice = () => {
                 })}
                 id="serialNumber"
                 name="serialNumber"
+                value={invoiceInfo.serialNumber}
+                type="text"
                 onChange={handleChange}
               />
             </CardDescription>
             <CardDescription className="flex flex-col justify-between sm:flex-row sm:gap-2">
               <div className="flex items-center gap-2">
-                <Label className="text-slate-500 text-sm font-semibold">
+                <Label className="text-slate-500 text-xs font-semibold">
                   Issued
                 </Label>
                 <Input
@@ -370,7 +376,7 @@ const CreateInvoice = () => {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-slate-500 text-sm font-semibold">
+                <Label className="text-slate-500 text-xs font-semibold">
                   Due Date
                 </Label>
                 <Input
@@ -394,7 +400,7 @@ const CreateInvoice = () => {
               className="border flex flex-col  w-full h-[230px] p-3"
               style={NoBorderStyle}
             >
-              <CardDescription className="text-slate-500 text-sm font-semibold mb-2">
+              <CardDescription className="text-slate-500 text-xs font-semibold mb-2">
                 From
               </CardDescription>
               <CompanyInfo editable={false} info={userCompanyInfo} />
@@ -404,7 +410,7 @@ const CreateInvoice = () => {
               style={NoBorderStyle}
             >
               <div className="w-full">
-                <CardDescription className="text-slate-500 text-sm font-semibold mb-2">
+                <CardDescription className="text-slate-500 text-xs font-semibold mb-2">
                   To
                 </CardDescription>
                 <Input
@@ -447,14 +453,8 @@ const CreateInvoice = () => {
                   onChange={handleChange}
                 />
                 <Input
-                  className={classNames('h-9 mb-2', {
-                    'border-red-500':
-                      errors &&
-                      errors.issues.some((issue) => {
-                        return issue.path[0] === 'toCompanyTaxId';
-                      }),
-                  })}
-                  placeholder="Tax ID (Optional)"
+                  className={classNames('h-9 mb-2')}
+                  placeholder="Tax ID"
                   name="toCompanyTaxId"
                   value={invoiceInfo.toCompanyTaxId}
                   onChange={handleChange}
@@ -469,17 +469,19 @@ const CreateInvoice = () => {
             <Table className="w-full p-0">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[320px]">Description</TableHead>
-                  <TableHead>QTY</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead></TableHead>
+                  <TableHead className="w-[320px] text-xs">
+                    Description
+                  </TableHead>
+                  <TableHead className="text-xs">QTY</TableHead>
+                  <TableHead className="text-xs">Price</TableHead>
+                  <TableHead className="text-xs">Amount</TableHead>
+                  <TableHead className="text-xs"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((item, index) => {
                   return (
-                    <TableRow key={item.description}>
+                    <TableRow key={index}>
                       <TableCell>
                         {' '}
                         <Input
@@ -495,14 +497,13 @@ const CreateInvoice = () => {
                           })}
                           placeholder="description"
                           name={`description`}
-                          value={items[index].description}
+                          value={item.description}
                           onChange={(e) => handleChangeItems(e, index)}
                         />
                       </TableCell>
                       <TableCell>
                         {' '}
                         <span className="flex flex-row items-center gap-2">
-                          $
                           <Input
                             className={classNames('h-9', {
                               'border-red-500':
@@ -575,7 +576,7 @@ const CreateInvoice = () => {
                         >
                           <img
                             className="w-full"
-                            src="../../public/DeleteItem.png"
+                            src={DeleteItem}
                             alt="deleteIcon"
                           ></img>
                         </Button>
@@ -587,16 +588,12 @@ const CreateInvoice = () => {
             </Table>
             <div className="w-full flex justify-end">
               <Button
-                className="text-base bg-transparent text-black hover:bg-transparent "
+                className="text-sm bg-transparent text-black hover:bg-transparent "
                 type="button"
                 onClick={handleAddItem}
               >
-                <img
-                  className="h-8"
-                  src="../../public/AddItem.png"
-                  alt="add icon"
-                />{' '}
-                Add Line Item
+                <img className="h-6" src={AddItem} alt="add icon" /> Add Line
+                Item
               </Button>
             </div>
 
@@ -664,7 +661,7 @@ const CreateInvoice = () => {
             className="border flex flex-col justify-between  w-full h-full p-3"
             style={NoBorderStyle}
           >
-            <Label className="text-slate-500 text-sm mb-2">Notes</Label>
+            <Label className="text-slate-500 text-xs mb-2">Notes</Label>
             <Input
               className={classNames('h-9 ', {
                 'border-red-500':
@@ -685,7 +682,7 @@ const CreateInvoice = () => {
             className="border flex flex-col justify-between  w-full h-full p-3"
             style={NoBorderStyle}
           >
-            <Label className="text-slate-500 text-sm mb-2">Terms</Label>
+            <Label className="text-slate-500 text-xs mb-2">Terms</Label>
             <Input
               className={classNames('h-9 ', {
                 'border-red-500':
