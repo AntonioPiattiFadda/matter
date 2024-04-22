@@ -126,17 +126,18 @@ const Login = () => {
         // The signed-in user info.
         const userInfo = result.user;
         // IdP data available using getAdditionalUserInfo(result)
-
         const user = {
-          email: userInfo.reloadUserInfo.email,
-          id: userInfo.reloadUserInfo.localId,
+          email: userInfo.email,
+          id: userInfo.uid,
           token,
         };
         window.sessionStorage.setItem('user', JSON.stringify(user));
-        createUser({ email: user.email }, user.id).then(() => {
-          window.location.href = '/dashboard';
-          setLoading(false);
-        });
+        if (user.email) {
+          createUser({ email: user.email }, user.id).then(() => {
+            window.location.href = '/dashboard';
+            setLoading(false);
+          });
+        }
 
         // ...
       })
