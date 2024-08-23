@@ -17,9 +17,9 @@ import { z } from 'zod';
 import {
   getAuth,
   isSignInWithEmailLink,
-  signInWithPopup,
   signInWithEmailLink,
   sendSignInLinkToEmail,
+  signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { createUser } from '@/Services';
 import MatterLogoImg from '../assets/matterLogo.png';
@@ -27,6 +27,7 @@ import MatterLogoImg from '../assets/matterLogo.png';
 import { GoogleAuthProvider } from 'firebase/auth';
 
 const PROD_LINK = import.meta.env.VITE_PROD_LINK;
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 const actionCodeSettings = {
   // URL you want to redirect back to. The domain (www.example.com) for this
@@ -43,14 +44,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<z.ZodError | null>(null);
   const [searchParams] = useSearchParams();
-
-  const auth = getAuth();
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({
-    login_hint: 'user@example.com',
-  });
   const code = searchParams.get('code');
-
   useEffect(() => {
     if (code) {
       setSendedCode(true);
@@ -58,6 +52,12 @@ const Login = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
+
+  const auth = getAuth();
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({
+    login_hint: 'user@example.com',
+  });
 
   const handleChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -89,6 +89,31 @@ const Login = () => {
     }
   };
 
+  const handleSkipLogin = () => {
+    setLoading(true);
+    const user = {
+      email: 'admin@gmail.com',
+      password: ADMIN_PASSWORD,
+    };
+    signInWithEmailAndPassword(auth, user.email, user.password)
+      .then((result) => {
+        const userInfo = result.user;
+        const user = {
+          email: userInfo.email,
+          id: userInfo.uid,
+        };
+        window.sessionStorage.setItem('user', JSON.stringify(user));
+        if (user.email) {
+          createUser({ email: user.email }, user.id).then(() => {
+            window.location.href = '/dashboard';
+          });
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
   const validateSingInWithEmailLink = () => {
     if (isSignInWithEmailLink(auth, window.location.href)) {
       let email = window.localStorage.getItem('emailForSignIn');
@@ -116,45 +141,45 @@ const Login = () => {
     }
   };
 
-  const loginWithGoogle = () => {
-    setLoading(true);
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        // This gives you a Google Access Token. You can use it to access the Google API.
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential?.accessToken;
-        // The signed-in user info.
-        const userInfo = result.user;
-        // IdP data available using getAdditionalUserInfo(result)
-        const user = {
-          email: userInfo.email,
-          id: userInfo.uid,
-          token,
-        };
-        window.sessionStorage.setItem('user', JSON.stringify(user));
-        if (user.email) {
-          createUser({ email: user.email }, user.id).then(() => {
-            window.location.href = '/dashboard';
-            setLoading(false);
-          });
-        }
+  // const loginWithGoogle = () => {
+  //   setLoading(true);
+  //   signInWithPopup(auth, provider)
+  //     .then((result) => {
+  //       // This gives you a Google Access Token. You can use it to access the Google API.
+  //       const credential = GoogleAuthProvider.credentialFromResult(result);
+  //       const token = credential?.accessToken;
+  //       // The signed-in user info.
+  //       const userInfo = result.user;
+  //       // IdP data available using getAdditionalUserInfo(result)
+  //       const user = {
+  //         email: userInfo.email,
+  //         id: userInfo.uid,
+  //         token,
+  //       };
+  //       window.sessionStorage.setItem('user', JSON.stringify(user));
+  //       if (user.email) {
+  //         createUser({ email: user.email }, user.id).then(() => {
+  //           window.location.href = '/dashboard';
+  //           setLoading(false);
+  //         });
+  //       }
 
-        // ...
-      })
-      .catch((error) => {
-        // Handle Errors here.
-        // const errorCode = error.code;
-        // const errorMessage = error.message;
-        // // The email of the user's account used.
-        // const email = error.customData.email;
-        // // The AuthCredential type that was used.
-        // const credential = GoogleAuthProvider.credentialFromError(error);
-        console.error(error);
-        setLoading(false);
+  //       // ...
+  //     })
+  //     .catch((error) => {
+  //       // Handle Errors here.
+  //       // const errorCode = error.code;
+  //       // const errorMessage = error.message;
+  //       // // The email of the user's account used.
+  //       // const email = error.customData.email;
+  //       // // The AuthCredential type that was used.
+  //       // const credential = GoogleAuthProvider.credentialFromError(error);
+  //       console.error(error);
+  //       setLoading(false);
 
-        // ...
-      });
-  };
+  //       // ...
+  //     });
+  // };
 
   if (sendedCode) {
     return (
@@ -227,23 +252,36 @@ const Login = () => {
                   >
                     Send Code
                   </Button>
-                  <Button
+                  {/* <Button
                     disabled={loading}
                     className="flex mt-2 text-sm font-normal"
                     type="button"
+                    variant={'secondary'}
                     onClick={loginWithGoogle}
                   >
                     Login with Google
-                  </Button>
+                  </Button> */}
                 </div>
               </>
             )}
           </form>
         </CardContent>
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex flex-col justify-between">
           <CardDescription className="text-sm  text-slate-500">
             By continuing you agree to the terms found on
             matterinvoice.com/terms
+          </CardDescription>
+
+          <Button
+            disabled={loading}
+            className="flex mt-4 text-sm font-normal self-start"
+            type="button"
+            onClick={handleSkipLogin}
+          >
+            Go to Dashboard
+          </Button>
+          <CardDescription className="text-sm  text-slate-500 mt-4">
+            (You can skip login for now and explore the app)
           </CardDescription>
         </CardFooter>
       </Card>
