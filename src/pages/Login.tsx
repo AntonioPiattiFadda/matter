@@ -95,8 +95,8 @@ const Login = () => {
       email: 'admin@gmail.com',
       password: ADMIN_PASSWORD,
     };
-    signInWithEmailAndPassword(auth, user.email, user.password)
-      .then((result) => {
+    signInWithEmailAndPassword(auth, user.email, user.password).then(
+      (result) => {
         const userInfo = result.user;
         const user = {
           email: userInfo.email,
@@ -105,13 +105,12 @@ const Login = () => {
         window.sessionStorage.setItem('user', JSON.stringify(user));
         if (user.email) {
           createUser({ email: user.email }, user.id).then(() => {
+            setLoading(false);
             window.location.href = '/dashboard';
           });
         }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      }
+    );
   };
 
   const validateSingInWithEmailLink = () => {
@@ -271,7 +270,10 @@ const Login = () => {
             By continuing you agree to the terms found on
             matterinvoice.com/terms
           </CardDescription>
-
+        </CardFooter>
+      </Card>
+      <Card className="w-[300px] sm:w-[350px]">
+        <CardContent>
           <Button
             disabled={loading}
             className="flex mt-4 text-sm font-normal self-start"
@@ -283,7 +285,7 @@ const Login = () => {
           <CardDescription className="text-sm  text-slate-500 mt-4">
             (You can skip login for now and explore the app)
           </CardDescription>
-        </CardFooter>
+        </CardContent>
       </Card>
     </div>
   );
