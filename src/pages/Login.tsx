@@ -92,25 +92,32 @@ const Login = () => {
   const handleSkipLogin = () => {
     setLoading(true);
     const user = {
+      id: 'PU8sOGkVvjg5nzlkWP4Xs17fhhV2',
       email: 'admin@gmail.com',
       password: ADMIN_PASSWORD,
     };
-    signInWithEmailAndPassword(auth, user.email, user.password).then(
-      (result) => {
-        const userInfo = result.user;
-        const user = {
-          email: userInfo.email,
-          id: userInfo.uid,
-        };
-        window.sessionStorage.setItem('user', JSON.stringify(user));
-        if (user.email) {
-          createUser({ email: user.email }, user.id).then(() => {
-            setLoading(false);
-            window.location.href = '/dashboard';
-          });
-        }
-      }
-    );
+    window.sessionStorage.setItem('user', JSON.stringify(user));
+    window.location.href = '/dashboard';
+
+    // signInWithEmailAndPassword(auth, user.email, user.password)
+    //   .then((result) => {
+    //     const userInfo = result.user;
+    //     const user = {
+    //       email: userInfo.email,
+    //       id: userInfo.uid,
+    //     };
+    //     window.sessionStorage.setItem('user', JSON.stringify(user));
+    //     if (user.email) {
+    //       createUser({ email: user.email }, user.id).then(() => {
+    //         setLoading(false);
+    //         window.location.href = '/dashboard';
+    //       });
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     console.log(error);
+    //     setLoading(false);
+    //   });
   };
 
   const validateSingInWithEmailLink = () => {
