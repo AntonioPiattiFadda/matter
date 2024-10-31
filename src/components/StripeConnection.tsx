@@ -28,7 +28,7 @@ const StripeConnection = ({
   connections,
   setConnections,
   userStripeAddress,
-  setUserStripeAddress,
+ 
 }: StripeConnectionProps) => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
