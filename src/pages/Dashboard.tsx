@@ -18,7 +18,7 @@ const Dashboard = () => {
   const [invoices, setInvoices] = useState<UserInvoices[]>([]);
   const [loading, setLoading] = useState(true);
   const [userMetamaskAdress, setUserMetamaskAdress] = useState('');
-  const [userStripeAddress, setUserStripeAddres] = useState('');
+  const [userStripeAddress, setUserStripeAddress] = useState('');
 
   const [companyInfo, setCompanyInfo] = useState({
     companyName: '',
@@ -48,7 +48,7 @@ const Dashboard = () => {
           }));
         }
         setUserMetamaskAdress(data.metamaskAddress || '');
-        setUserStripeAddres(data.stripeId || '');
+        setUserStripeAddress(data.stripeId || '');
         setCompanyInfo({
           companyName: data.companyName || '',
           businessEmail: data.businessEmail || '',
@@ -112,7 +112,12 @@ const Dashboard = () => {
         userMetamaskAdress={userMetamaskAdress}
         userStripeAddress={userStripeAddress}
       />
-      <InvoiceTable invoices={invoices} user={user} connections={connections} setInvoices={setInvoices} />
+      <InvoiceTable
+        invoices={invoices}
+        user={user}
+        connections={connections}
+        setInvoices={setInvoices}
+      />
     </div>
   );
 };

@@ -28,6 +28,7 @@ const StripeConnection = ({
   connections,
   setConnections,
   userStripeAddress,
+  setUserStripeAddress,
 }: StripeConnectionProps) => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -74,14 +75,15 @@ const StripeConnection = ({
   }, [account_id, success, setConnections]);
 
   const handleStripeConnection = () => {
-    const stripeFetch = axios.post(`${STRIPE_SERVER_LINK}/onboard-user`);
-    stripeFetch
-      .then((res) => {
-        window.location.href = res.data.url;
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    setConnections((prevState) => ({ ...prevState, stripe: true }));
+    // const stripeFetch = axios.post(`${STRIPE_SERVER_LINK}/onboard-user`);
+    // stripeFetch
+    //   .then((res) => {
+    //     window.location.href = res.data.url;
+    //   })
+    //   .catch((err) => {
+    //     console.log(err);
+    //   });
   };
 
   const handleStripeDisconnection = () => {
@@ -110,7 +112,7 @@ const StripeConnection = ({
       ) : (
         <>
           <CardDescription className="text-slate-900	font-semibold text-sm mt-6">
-            Setup card payouts
+            Setup card payouts (Disabled for now)
           </CardDescription>
           <Button
             className="flex items-center mt-3 mb-3 w-full font-normal text-sm "
