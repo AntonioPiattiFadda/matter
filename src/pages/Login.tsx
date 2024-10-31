@@ -19,7 +19,6 @@ import {
   isSignInWithEmailLink,
   signInWithEmailLink,
   sendSignInLinkToEmail,
-  signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { createUser } from '@/Services';
 import MatterLogoImg from '../assets/matterLogo.png';
@@ -96,6 +95,7 @@ const Login = () => {
       email: 'admin@gmail.com',
       password: ADMIN_PASSWORD,
     };
+
     window.sessionStorage.setItem('user', JSON.stringify(user));
     window.location.href = '/dashboard';
 
@@ -251,7 +251,7 @@ const Login = () => {
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    disabled={loading}
+                    disabled={true}
                     className="flex mt-2 text-sm font-normal"
                     type="button"
                     onClick={handleSendCode}
@@ -290,7 +290,8 @@ const Login = () => {
             Go to Dashboard
           </Button>
           <CardDescription className="text-sm  text-slate-500 mt-4">
-            (You can skip login for now and explore the app)
+            The login is disabled for now, please click on the button to go to
+            the dashboard and explore the app
           </CardDescription>
         </CardContent>
       </Card>
